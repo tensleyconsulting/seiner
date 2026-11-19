@@ -1,0 +1,8 @@
+/seiner
+*.log
+*.exe
+/dist/
+internal/ui/icons/assets/*.png
+AGENTS.local.md
+.claude/*.local.json
+.gemini/*.local.*

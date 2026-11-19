@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="24" viewBox="0 0 32 24">
+  <circle cx="5.4" cy="13.6" r="4" fill="#5B6CF6"/>
+  <circle cx="9.6" cy="9" r="4.6" fill="#5B6CF6"/>
+  <circle cx="15.6" cy="6.6" r="5.4" fill="#5B6CF6"/>
+  <circle cx="22" cy="8" r="4.8" fill="#5B6CF6"/>
+  <circle cx="26.6" cy="12.6" r="4" fill="#5B6CF6"/>
+  <circle cx="8" cy="17.6" r="3.8" fill="#5B6CF6"/>
+  <circle cx="13.6" cy="19" r="3.9" fill="#5B6CF6"/>
+  <circle cx="19.4" cy="19" r="3.9" fill="#5B6CF6"/>
+  <circle cx="24.6" cy="17.4" r="3.8" fill="#5B6CF6"/>
+  <rect x="6" y="8" width="21" height="11" rx="3" ry="3" fill="#5B6CF6"/>
+  <path fill="none" stroke="#B3BCFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M6.6 19.2Q8.6 17.8 10.6 19.2T14.6 19.2T18.6 19.2T22.6 19.2T26.4 19"/>
+  <path fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M8.4 13.6V8H10.8V13.6M8.4 8.6L5.4 16.2"/>
+  <path fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.8" stroke-linejoin="round" d="M7.6 13.4H22.4L25.8 11.4Q25.2 15.6 22.4 17.6H10.4Q8.4 16 7.6 13.4Z"/>
+  <rect x="14" y="8.6" width="8" height="5.4" rx="1" ry="1" fill="#FFFFFF"/>
+  <rect x="13.2" y="7.2" width="9.8" height="2" rx="1" ry="1" fill="#FFFFFF"/>
+  <rect x="15.2" y="10.2" width="2" height="3.4" rx="0.8" ry="0.8" fill="#3A47C9"/>
+  <rect x="18.2" y="10.2" width="2.8" height="2.2" rx="0.8" ry="0.8" fill="#3A47C9"/>
+  <path fill="#FFFFFF" d="M15.6 3.8H18.4L18 7.6H16Z"/>
+</svg>

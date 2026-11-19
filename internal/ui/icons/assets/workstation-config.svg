@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <rect x="8.2" y="12.5" width="2.6" height="3.6" fill="#FFB8DA"/>
+  <rect x="5" y="15.6" width="9" height="2.3" rx="1.15" ry="1.15" fill="#E0569A"/>
+  <rect x="2" y="3" width="15" height="10" rx="2.2" ry="2.2" fill="#E0569A"/>
+  <path fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5.6 6.2l2.08 1.84 -2.08 1.84"/>
+  <path fill="none" stroke="#FFC93C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9.12 9.88h3.04"/>
+  <path fill="#B43575" d="M21.51 17.33 L22.76 17.5 L22.76 18.7 L21.51 18.87 L21.11 19.82 L21.88 20.83 L21.03 21.68 L20.02 20.91 L19.07 21.31 L18.9 22.56 L17.7 22.56 L17.53 21.31 L16.58 20.91 L15.57 21.68 L14.72 20.83 L15.49 19.82 L15.09 18.87 L13.84 18.7 L13.84 17.5 L15.09 17.33 L15.49 16.38 L14.72 15.37 L15.57 14.52 L16.58 15.29 L17.53 14.89 L17.7 13.64 L18.9 13.64 L19.07 14.89 L20.02 15.29 L21.03 14.52 L21.88 15.37 L21.11 16.38ZM16.85 18.1A1.45 1.45 0 0 0 18.3 19.55A1.45 1.45 0 0 0 19.75 18.1A1.45 1.45 0 0 0 18.3 16.65A1.45 1.45 0 0 0 16.85 18.1Z"/>
+</svg>

@@ -1,0 +1,694 @@
+== input 0 width 1
+
+== input 0 width 2
+
+== input 0 width 3
+
+== input 0 width 5
+
+== input 0 width 8
+
+== input 0 width 12
+
+== input 0 width 20
+
+== input 0 width 33
+
+== input 0 width 60
+
+== input 1 width 1
+
+== input 1 width 2
+
+== input 1 width 3
+
+== input 1 width 5
+
+== input 1 width 8
+
+== input 1 width 12
+
+== input 1 width 20
+
+== input 1 width 33
+
+== input 1 width 60
+
+== input 2 width 1
+a
+:
+b
+== input 2 width 2
+a:
+b
+== input 2 width 3
+a:
+b
+== input 2 width 5
+a: b
+== input 2 width 8
+a: b
+== input 2 width 12
+a: b
+== input 2 width 20
+a: b
+== input 2 width 33
+a: b
+== input 2 width 60
+a: b
+== input 3 width 1
+s
+o
+u
+…
+== input 3 width 2
+so
+ur
+ce
+……
+== input 3 width 3
+sou
+rce
+Ran
+g……
+== input 3 width 5
+sourc
+eRang
+es:
+10.……
+== input 3 width 8
+sourceRa
+nges:
+10.0.0.0
+/8…
+== input 3 width 12
+sourceRanges
+: 10.0.0.0/8
+192.168.0.0/
+16
+== input 3 width 20
+sourceRanges:
+10.0.0.0/8
+192.168.0.0/16
+== input 3 width 33
+sourceRanges: 10.0.0.0/8
+192.168.0.0/16
+== input 3 width 60
+sourceRanges: 10.0.0.0/8 192.168.0.0/16
+== input 4 width 1
+x
+x
+x
+…
+== input 4 width 2
+xx
+xx
+xx
+……
+== input 4 width 3
+xxx
+xxx
+xxx
+x……
+== input 4 width 5
+xxxxx
+xxxxx
+xxxxx
+xxx……
+== input 4 width 8
+xxxxxxxx
+xxxxxxxx
+xxxxxxxx
+xxxxxx……
+== input 4 width 12
+xxxxxxxxxxxx
+xxxxxxxxxxxx
+xxxxxxxxxxxx
+xxxxxxxxxx……
+== input 4 width 20
+xxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxx
+== input 4 width 33
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxx
+== input 4 width 60
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+== input 5 width 1
+w
+o
+r
+…
+== input 5 width 2
+wo
+rd
+wo
+……
+== input 5 width 3
+wor
+d
+wor
+d…
+== input 5 width 5
+word
+word
+word
+word…
+== input 5 width 8
+word
+word
+word
+word…
+== input 5 width 12
+word word
+word word
+word word
+word word…
+== input 5 width 20
+word word word word
+word word word word
+word word word word
+word word word word…
+== input 5 width 33
+word word word word word word
+word word word word word word
+word word word word word word
+word word word word word word…
+== input 5 width 60
+word word word word word word word word word word word word
+word word word word word word word word word word word word
+word word word word word word word word word word word word
+word word word word
+== input 6 width 1
+p
+r
+o
+…
+== input 6 width 2
+pr
+oj
+ec
+……
+== input 6 width 3
+pro
+jec
+ts/
+d……
+== input 6 width 5
+proje
+cts/
+demo/
+glo……
+== input 6 width 8
+projects
+/demo/
+global/
+networ……
+== input 6 width 12
+projects/
+demo/global/
+networks/
+default
+== input 6 width 20
+projects/demo/
+global/networks/
+default
+== input 6 width 33
+projects/demo/global/networks/
+default
+== input 6 width 60
+projects/demo/global/networks/default
+== input 7 width 1
+1
+0
+.
+…
+== input 7 width 2
+10
+.0
+.0
+……
+== input 7 width 3
+10.
+0.0
+.0/
+8,…
+== input 7 width 5
+10.0.
+0.0/
+8,
+192……
+== input 7 width 8
+10.0.0.0
+/8,
+192.168.
+0.0/16;…
+== input 7 width 12
+10.0.0.0/8,
+192.168.0.0/
+16;
+172.16.0.0/…
+== input 7 width 20
+10.0.0.0/8,
+192.168.0.0/16;
+172.16.0.0/12,
+100.64.0.0/10
+== input 7 width 33
+10.0.0.0/8,192.168.0.0/16;
+172.16.0.0/12, 100.64.0.0/10
+== input 7 width 60
+10.0.0.0/8,192.168.0.0/16;172.16.0.0/12, 100.64.0.0/10
+== input 8 width 1
+s
+e
+r
+…
+== input 8 width 2
+se
+rv
+ic
+……
+== input 8 width 3
+ser
+vic
+eAc
+c……
+== input 8 width 5
+servi
+ceAcc
+ount:
+svc……
+== input 8 width 8
+serviceA
+ccount:s
+vc-123@d
+emo-pr……
+== input 8 width 12
+serviceAccou
+nt:svc-123@d
+emo-project.
+iam.gservi……
+== input 8 width 20
+serviceAccount:svc-1
+23@demo-project.iam.
+gserviceaccount.com,
+user:alice@example……
+== input 8 width 33
+serviceAccount:svc-123@demo-proje
+ct.iam.gserviceaccount.com,
+user:alice@example.com
+== input 8 width 60
+serviceAccount:svc-123@demo-project.iam.gserviceaccount.com,
+user:alice@example.com
+== input 9 width 1
+a
+b
+
+…
+== input 9 width 2
+a
+b
+c
+……
+== input 9 width 3
+a
+b
+c
+d…
+== input 9 width 5
+a  b
+c
+d
+tra……
+== input 9 width 8
+a  b   c
+  d
+trailing
+
+== input 9 width 12
+a  b   c
+d
+trailing
+== input 9 width 20
+a  b   c    d
+trailing
+== input 9 width 33
+a  b   c    d     trailing
+== input 9 width 60
+a  b   c    d     trailing
+== input 10 width 1
+
+l
+e
+…
+== input 10 width 2
+
+le
+ad
+……
+== input 10 width 3
+
+lea
+din
+g…
+== input 10 width 5
+
+leadi
+ng
+spa……
+== input 10 width 8
+
+leading
+spaces
+then…
+== input 10 width 12
+   leading
+spaces then
+words
+== input 10 width 20
+   leading spaces
+then words
+== input 10 width 33
+   leading spaces then words
+== input 10 width 60
+   leading spaces then words
+== input 11 width 1
+l
+i
+n
+…
+== input 11 width 2
+li
+ne
+on
+e…
+== input 11 width 3
+lin
+e
+one
+l……
+== input 11 width 5
+line
+one
+line
+two…
+== input 11 width 8
+line one
+line two
+is a
+little…
+== input 11 width 12
+line one
+line two is
+a little
+longer…
+== input 11 width 20
+line one
+line two is a little
+longer
+…
+== input 11 width 33
+line one
+line two is a little longer
+
+line four
+== input 11 width 60
+line one
+line two is a little longer
+
+line four
+== input 12 width 1
+日
+本
+語
+…
+== input 12 width 2
+日
+本
+語
+……
+== input 12 width 3
+日
+本
+語
+の…
+== input 12 width 5
+日本
+語の
+テキ
+スト…
+== input 12 width 8
+日本語の
+テキスト
+は幅が広
+い 文字…
+== input 12 width 12
+日本語のテキ
+ストは幅が広
+い 文字
+です、カン……
+== input 12 width 20
+日本語のテキストは幅
+が広い 文字
+です、カンマ，と/
+スラッシュ
+== input 12 width 33
+日本語のテキストは幅が広い 文字
+です、カンマ，と/スラッシュ
+== input 12 width 60
+日本語のテキストは幅が広い 文字 です、カンマ，と/スラッシュ
+== input 13 width 1
+m
+i
+x
+…
+== input 13 width 2
+mi
+xe
+d
+……
+== input 13 width 3
+mix
+ed
+asc
+ii…
+== input 13 width 5
+mixed
+ascii
+日本
+and…
+== input 13 width 8
+mixed
+ascii
+日本 and
+wide…
+== input 13 width 12
+mixed ascii
+日本 and
+wide
+ドメイン/…
+== input 13 width 20
+mixed ascii 日本 and
+wide ドメイン/パス/
+区切り, done
+== input 13 width 33
+mixed ascii 日本 and wide
+ドメイン/パス/区切り, done
+== input 13 width 60
+mixed ascii 日本 and wide ドメイン/パス/区切り, done
+== input 14 width 1
+e
+m
+o
+…
+== input 14 width 2
+em
+oj
+i
+……
+== input 14 width 3
+emo
+ji
+👍🏽
+f……
+== input 14 width 5
+emoji
+👍🏽
+famil
+y 👨‍👩‍👧…
+== input 14 width 8
+emoji 👍🏽
+family
+👨‍👩‍👧 flag
+🇯🇵🇺🇸…
+== input 14 width 12
+emoji 👍🏽
+family 👨‍👩‍👧
+flag 🇯🇵🇺🇸
+keycap #️⃣ é…
+== input 14 width 20
+emoji 👍🏽 family 👨‍👩‍👧
+flag 🇯🇵🇺🇸 keycap #️⃣
+é combining
+== input 14 width 33
+emoji 👍🏽 family 👨‍👩‍👧 flag 🇯🇵🇺🇸
+keycap #️⃣ é combining
+== input 14 width 60
+emoji 👍🏽 family 👨‍👩‍👧 flag 🇯🇵🇺🇸 keycap #️⃣ é combining
+== input 15 width 1
+a
+r
+؀x
+…
+== input 15 width 2
+ar
+؀x
+pr
+……
+== input 15 width 3
+ar ؀x
+pre
+pen
+d ؀…
+== input 15 width 5
+ar ؀x
+prepe
+nd ؀
+then…
+== input 15 width 8
+ar ؀x
+prepend ؀
+then
+space
+== input 15 width 12
+ar ؀x prepend ؀
+then space
+== input 15 width 20
+ar ؀x prepend ؀ then
+space
+== input 15 width 33
+ar ؀x prepend ؀ then space
+== input 15 width 60
+ar ؀x prepend ؀ then space
+== input 16 width 1
+t
+a
+b	
+…
+== input 16 width 2
+ta
+b	s
+ep
+……
+== input 16 width 3
+tab	
+sep
+ara
+t……
+== input 16 width 5
+tab	se
+parat
+ed	val
+ues…
+== input 16 width 8
+tab	separ
+ated	valu
+es and
+[31mred[0m text
+== input 16 width 12
+tab	separated	
+values and
+[31mred[0m text
+== input 16 width 20
+tab	separated	values
+and [31mred[0m text
+== input 16 width 33
+tab	separated	values and [31mred[0m text
+== input 16 width 60
+tab	separated	values and [31mred[0m text
+== input 17 width 1
+h
+t
+t
+…
+== input 17 width 2
+ht
+tp
+s:
+……
+== input 17 width 3
+htt
+ps:
+//
+c……
+== input 17 width 5
+https
+://
+conso
+le.……
+== input 17 width 8
+https://
+console.
+cloud.go
+ogle.c……
+== input 17 width 12
+https://
+console.clou
+d.google.com
+/storage/…
+== input 17 width 20
+https://
+console.cloud.google
+.com/storage/
+browser/…
+== input 17 width 33
+https://console.cloud.google.com/
+storage/browser/my-app-bucket;
+tab=objects?project=demo-project
+== input 17 width 60
+https://console.cloud.google.com/storage/browser/
+my-app-bucket;tab=objects?project=demo-project
+== input 18 width 1
+a
+/
+a
+…
+== input 18 width 2
+a/
+a/
+a/
+……
+== input 18 width 3
+a/
+a/
+a/
+a/…
+== input 18 width 5
+a/a/
+a/a/
+a/a/
+a/a/…
+== input 18 width 8
+a/a/a/a/
+a/a/a/a/
+a/a/a/a/
+a/a/a/……
+== input 18 width 12
+a/a/a/a/a/a/
+a/a/a/a/a/a/
+a/a/a/a/a/a/
+a/a/a/a/a/……
+== input 18 width 20
+a/a/a/a/a/a/a/a/a/a/
+a/a/a/a/a/a/a/a/a/a/
+a/a/a/a/a/a/a/a/a/a/
+b,b,b,b,b,b,b,b,b,……
+== input 18 width 33
+a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/
+a/a/a/a/a/a/a/a/a/a/a/a/a/a/b,b,
+b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,
+b,b,b,b,b,b,b,b,b,b,b,b,c;c;c;c;…
+== input 18 width 60
+a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/
+b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,
+c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;c;
