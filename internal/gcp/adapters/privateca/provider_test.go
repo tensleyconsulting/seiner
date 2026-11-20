@@ -20,6 +20,7 @@ type fakeAPI struct {
 	templates    []Template
 	poolIAM      map[string][]Binding // keyed by location/pool
 	templateIAM  map[string][]Binding // keyed by location/template
+	crlIAM       map[string][]Binding // keyed by location/pool/ca/crl
 	err          error
 	calls        *atomic.Int32
 }
@@ -86,6 +87,13 @@ func (f fakeAPI) GetTemplateIAMPolicy(_ context.Context, _, location, template s
 		return nil, err
 	}
 	return f.templateIAM[location+"/"+template], nil
+}
+
+func (f fakeAPI) GetCRLIAMPolicy(_ context.Context, _, location, pool, ca, crl string) ([]Binding, error) {
+	if err := f.record(); err != nil {
+		return nil, err
+	}
+	return f.crlIAM[location+"/"+pool+"/"+ca+"/"+crl], nil
 }
 
 func TestListScopesAndPermissions(t *testing.T) {

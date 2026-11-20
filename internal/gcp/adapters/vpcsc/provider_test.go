@@ -19,7 +19,8 @@ type fakeAPI struct {
 	perimeters map[string][]Perimeter // keyed by policy number
 	perimErr   map[string]error       // keyed by policy number
 	levels     map[string][]Level
-	err        error // returned from GetPerimeter and ListLevels when set
+	policyIAM  map[string][]Binding // keyed by policy number
+	err        error                // returned from GetPerimeter and ListLevels when set
 	mu         *sync.Mutex
 	calls      *[]string
 }
@@ -67,6 +68,14 @@ func (f fakeAPI) ListLevels(_ context.Context, policy string) ([]Level, error) {
 		return nil, f.err
 	}
 	return f.levels[policy], nil
+}
+
+func (f fakeAPI) GetPolicyIAMPolicy(_ context.Context, policy string) ([]Binding, error) {
+	f.called("policyIAM " + policy)
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.policyIAM[policy], nil
 }
 
 func (f fakeAPI) Project(_ context.Context, project string) (Project, error) {
@@ -219,8 +228,8 @@ func TestPolicyMapping(t *testing.T) {
 	if scoped.Badge != "SCOPED" || scoped.Metadata["scope"] != "folders/7" {
 		t.Fatalf("scoped policy %+v", scoped)
 	}
-	if want := []string{model.FacetPerimeters, model.FacetAccessLevels}; len(org.Facets) != 2 ||
-		org.Facets[0].ID != want[0] || org.Facets[1].ID != want[1] {
+	if want := []string{model.FacetPerimeters, model.FacetAccessLevels, model.FacetPermissions}; len(org.Facets) != 3 ||
+		org.Facets[0].ID != want[0] || org.Facets[1].ID != want[1] || org.Facets[2].ID != want[2] {
 		t.Fatalf("facets %+v", org.Facets)
 	}
 	if p, ok := model.ParseName(org.ID); !ok || p.Scope != org.ScopeID {
@@ -280,7 +289,7 @@ func TestPolicyFacetsIgnoreOthers(t *testing.T) {
 		facet  string
 	}{
 		{"other service", model.Resource{ID: policy.ID, Service: model.ServiceOrgPolicy}, model.FacetPerimeters},
-		{"undeclared facet", policy, model.FacetPermissions},
+		{"undeclared facet", policy, model.FacetObjects},
 		{"perimeter id", model.Resource{ID: policy.ID + "/servicePerimeters/x", Service: model.ServiceAccessPolicy}, model.FacetPerimeters},
 	}
 	for _, tc := range cases {

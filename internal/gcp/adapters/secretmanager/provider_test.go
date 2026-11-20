@@ -13,6 +13,7 @@ import (
 type fakeAPI struct {
 	secrets  []Secret
 	versions map[string][]Version // keyed by secret name
+	policies map[string][]Binding // keyed by secret name
 	err      error
 	calls    *int
 }
@@ -41,6 +42,14 @@ func (f fakeAPI) ListVersions(_ context.Context, _, secret string, limit int) ([
 		return vs[:limit], true, nil
 	}
 	return vs, false, nil
+}
+
+func (f fakeAPI) GetIAMPolicy(_ context.Context, _, secret string) ([]Binding, error) {
+	f.called()
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.policies[secret], nil
 }
 
 var created = time.Date(2024, 5, 2, 8, 10, 0, 0, time.UTC)
@@ -124,7 +133,7 @@ func TestSecretMapping(t *testing.T) {
 	if aliases := r.List("aliases"); !slices.Equal(aliases, []string{"current → 3", "previous → 2"}) {
 		t.Fatalf("aliases = %v", aliases)
 	}
-	if len(r.Facets) != 1 || r.Facets[0].ID != model.FacetVersions || !r.Facets[0].Inline {
+	if len(r.Facets) != 2 || r.Facets[0].ID != model.FacetVersions || r.Facets[1].ID != model.FacetPermissions {
 		t.Fatalf("facets: %+v", r.Facets)
 	}
 

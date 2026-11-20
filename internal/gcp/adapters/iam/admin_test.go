@@ -15,6 +15,7 @@ type fakeAdmin struct {
 	roles    map[string][]Role              // by parent
 	role     map[string]Role                // by name, for GetRole
 	keys     map[string][]ServiceAccountKey // by email
+	policies map[string]Policy              // by email
 	err      error
 	calls    *int
 }
@@ -61,6 +62,16 @@ func (f fakeAdmin) ListServiceAccountKeys(_ context.Context, _, email string) ([
 		return nil, f.err
 	}
 	return slices.Clone(f.keys[email]), nil
+}
+
+func (f fakeAdmin) GetServiceAccountPolicy(_ context.Context, _, email string) (Policy, error) {
+	if f.calls != nil {
+		*f.calls++
+	}
+	if f.err != nil {
+		return Policy{}, f.err
+	}
+	return f.policies[email], nil
 }
 
 func TestServiceAccountsScopes(t *testing.T) {
@@ -137,7 +148,7 @@ func TestServiceAccountKeys(t *testing.T) {
 		t.Fatalf("%+v %v", accounts, err)
 	}
 	acct := accounts[0]
-	if f, ok := acct.InlineFacet(); !ok || f.ID != model.FacetKeys {
+	if len(acct.Facets) != 2 || acct.Facets[0].ID != model.FacetKeys || acct.Facets[1].ID != model.FacetPermissions {
 		t.Fatalf("account facets: %+v", acct.Facets)
 	}
 	got, truncated, err := p.ListRelated(context.Background(), acct, model.FacetKeys)

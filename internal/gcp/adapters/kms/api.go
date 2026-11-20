@@ -105,4 +105,6 @@ type API interface {
 	// GetIAMPolicy reads the bindings set on a key ring, or on one of its
 	// keys when key is not empty. Inherited bindings are not included.
 	GetIAMPolicy(ctx context.Context, project, location, ring, key string) ([]Binding, error)
+	// GetImportJobIAMPolicy reads the bindings set directly on an import job.
+	GetImportJobIAMPolicy(ctx context.Context, project, location, ring, job string) ([]Binding, error)
 }

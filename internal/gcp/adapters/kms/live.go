@@ -94,6 +94,14 @@ func (a lazyAPI) GetIAMPolicy(ctx context.Context, project, location, ring, key 
 	return liveAPI{svc: svc}.GetIAMPolicy(ctx, project, location, ring, key)
 }
 
+func (a lazyAPI) GetImportJobIAMPolicy(ctx context.Context, project, location, ring, job string) ([]Binding, error) {
+	svc, err := a.l.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return liveAPI{svc: svc}.GetImportJobIAMPolicy(ctx, project, location, ring, job)
+}
+
 var (
 	_ API = lazyAPI{}
 	_ API = liveAPI{}
@@ -216,6 +224,15 @@ func (a liveAPI) GetIAMPolicy(ctx context.Context, project, location, ring, key 
 	} else {
 		policy, err = a.svc.Projects.Locations.KeyRings.CryptoKeys.GetIamPolicy(resource + "/cryptoKeys/" + key).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
 	}
+	if err != nil {
+		return nil, err
+	}
+	return fromBindings(policy.Bindings), nil
+}
+
+func (a liveAPI) GetImportJobIAMPolicy(ctx context.Context, project, location, ring, job string) ([]Binding, error) {
+	name := ringName(project, location, ring) + "/importJobs/" + job
+	policy, err := a.svc.Projects.Locations.KeyRings.ImportJobs.GetIamPolicy(name).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
 	if err != nil {
 		return nil, err
 	}

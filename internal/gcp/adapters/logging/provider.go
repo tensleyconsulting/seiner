@@ -184,20 +184,44 @@ func bucketID(project, location, bucket string) string {
 	return "projects/" + project + "/locations/" + url.PathEscape(location) + "/buckets/" + url.PathEscape(bucket)
 }
 
-// ListRelated lists a bucket's log views and linked datasets.
+// ListRelated lists a bucket's log views and linked datasets, and a log
+// view's IAM bindings.
 func (p Buckets) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
-	if parent.Service != model.ServiceLogBucket || (facetID != model.FacetViews && facetID != model.FacetLinks) {
+	switch {
+	case parent.Service == model.ServiceLogBucket && (facetID == model.FacetViews || facetID == model.FacetLinks):
+	case parent.Service == model.ServiceLogView && facetID == model.FacetPermissions:
+	default:
 		return nil, false, nil
 	}
 	if err := ctx.Err(); err != nil {
 		return nil, false, err
 	}
 	n, ok := model.ParseName(parent.ID)
-	if !ok || n.Project == "" || n.Location == "" || n.Kind != "buckets" || len(n.Rest) != 0 {
+	if !ok || n.Project == "" || n.Location == "" || n.Kind != "buckets" {
 		return nil, false, nil
 	}
 	if p.api == nil {
 		return nil, false, errors.New("logging: no API")
+	}
+	if parent.Service == model.ServiceLogView {
+		if len(n.Rest) != 2 || n.Rest[0] != "views" || n.Rest[1] == "" {
+			return nil, false, nil
+		}
+		bindings, err := p.api.GetViewIAMPolicy(ctx, n.Project, n.Location, n.Name, n.Rest[1])
+		if err != nil {
+			return nil, false, err
+		}
+		out := make([]model.Resource, 0, len(bindings))
+		for _, b := range bindings {
+			r := model.BindingResource(parent.ID, parent.ScopeID, b.Role, b.Members, b.Condition)
+			r.ParentID = parent.ID
+			r.FacetID = model.FacetPermissions
+			out = append(out, r)
+		}
+		return out, false, nil
+	}
+	if len(n.Rest) != 0 {
+		return nil, false, nil
 	}
 	var out []model.Resource
 	if facetID == model.FacetViews {
@@ -238,6 +262,7 @@ func viewResource(bucket model.Resource, v View) model.Resource {
 		Created:     v.Created,
 		Metadata:    md,
 		Fields:      model.FieldsOf(md, "filter", "updated"),
+		Facets:      []model.Facet{{ID: model.FacetPermissions, Label: "Permissions", Optional: true}},
 		ParentID:    bucket.ID,
 		FacetID:     model.FacetViews,
 	}

@@ -42,6 +42,14 @@ func (a lazyAPI) ListRecords(ctx context.Context, project, zone string, limit in
 	return liveAPI{svc: svc}.ListRecords(ctx, project, zone, limit)
 }
 
+func (a lazyAPI) GetIAMPolicy(ctx context.Context, project, zone string) ([]Binding, error) {
+	svc, err := a.l.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return liveAPI{svc: svc}.GetIAMPolicy(ctx, project, zone)
+}
+
 var (
 	_ API = lazyAPI{}
 	_ API = liveAPI{}
@@ -81,6 +89,32 @@ func (a liveAPI) ListRecords(ctx context.Context, project, zone string, limit in
 		return nil, false, err
 	}
 	return out, truncated, nil
+}
+
+func (a liveAPI) GetIAMPolicy(ctx context.Context, project, zone string) ([]Binding, error) {
+	resource := "projects/" + project + "/managedZones/" + zone
+	req := &dns.GoogleIamV1GetIamPolicyRequest{
+		Options: &dns.GoogleIamV1GetPolicyOptions{RequestedPolicyVersion: 3},
+	}
+	policy, err := a.svc.ManagedZones.GetIamPolicy(resource, req).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	var out []Binding
+	for _, b := range policy.Bindings {
+		out = append(out, Binding{Role: b.Role, Members: append([]string(nil), b.Members...), Condition: conditionTitle(b.Condition)})
+	}
+	return out, nil
+}
+
+func conditionTitle(e *dns.Expr) string {
+	if e == nil {
+		return ""
+	}
+	if e.Title != "" {
+		return e.Title
+	}
+	return e.Expression
 }
 
 func fromZone(z *dns.ManagedZone) Zone {

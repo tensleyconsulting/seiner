@@ -50,9 +50,9 @@ func (p Provider) List(ctx context.Context, scopeID string) ([]model.Resource, e
 	return out, nil
 }
 
-// ListRelated lists a zone's record sets.
+// ListRelated lists a zone's record sets or IAM bindings.
 func (p Provider) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
-	if parent.Service != model.ServiceCloudDNS || facetID != model.FacetRecords {
+	if parent.Service != model.ServiceCloudDNS || (facetID != model.FacetRecords && facetID != model.FacetPermissions) {
 		return nil, false, nil
 	}
 	if err := ctx.Err(); err != nil {
@@ -64,6 +64,20 @@ func (p Provider) ListRelated(ctx context.Context, parent model.Resource, facetI
 	}
 	if p.api == nil {
 		return nil, false, errors.New("clouddns: no API")
+	}
+	if facetID == model.FacetPermissions {
+		bindings, err := p.api.GetIAMPolicy(ctx, n.Project, n.Name)
+		if err != nil {
+			return nil, false, err
+		}
+		out := make([]model.Resource, 0, len(bindings))
+		for _, b := range bindings {
+			r := model.BindingResource(parent.ID, parent.ScopeID, b.Role, b.Members, b.Condition)
+			r.ParentID = parent.ID
+			r.FacetID = model.FacetPermissions
+			out = append(out, r)
+		}
+		return out, false, nil
 	}
 	records, truncated, err := p.api.ListRecords(ctx, n.Project, n.Name, maxRecords)
 	if err != nil {
@@ -105,7 +119,10 @@ func zoneResource(project string, z Zone) model.Resource {
 		Metadata:    md,
 		Fields: model.FieldsOf(md, "dnsName", "visibility", "dnssec", "nameServers", "networks", "gkeClusters",
 			"forwarding", "peerNetwork", "logging"),
-		Facets: []model.Facet{{ID: model.FacetRecords, Label: "Record Sets", Inline: true}},
+		Facets: []model.Facet{
+			{ID: model.FacetRecords, Label: "Record Sets"},
+			{ID: model.FacetPermissions, Label: "Permissions", Optional: true},
+		},
 	}
 }
 

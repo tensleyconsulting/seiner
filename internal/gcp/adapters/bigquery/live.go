@@ -167,6 +167,49 @@ func (a datasetAPI) ListModels(ctx context.Context, project, dataset string, lim
 	return out, truncated, nil
 }
 
+func (a datasetAPI) GetTableIAMPolicy(ctx context.Context, project, dataset, table string) ([]Binding, error) {
+	svc, err := a.l.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resource := "projects/" + project + "/datasets/" + dataset + "/tables/" + table
+	req := &bq.GetIamPolicyRequest{Options: &bq.GetPolicyOptions{RequestedPolicyVersion: 3}}
+	pol, err := svc.Tables.GetIamPolicy(resource, req).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	return fromBQBindings(pol.Bindings), nil
+}
+
+func (a datasetAPI) GetRoutineIAMPolicy(ctx context.Context, project, dataset, routine string) ([]Binding, error) {
+	svc, err := a.l.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resource := "projects/" + project + "/datasets/" + dataset + "/routines/" + routine
+	req := &bq.GetIamPolicyRequest{Options: &bq.GetPolicyOptions{RequestedPolicyVersion: 3}}
+	pol, err := svc.Routines.GetIamPolicy(resource, req).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	return fromBQBindings(pol.Bindings), nil
+}
+
+func fromBQBindings(bindings []*bq.Binding) []Binding {
+	var out []Binding
+	for _, b := range bindings {
+		cond := ""
+		if b.Condition != nil {
+			cond = b.Condition.Title
+			if cond == "" {
+				cond = b.Condition.Expression
+			}
+		}
+		out = append(out, Binding{Role: b.Role, Members: append([]string(nil), b.Members...), Condition: cond})
+	}
+	return out
+}
+
 type reservationAPI struct {
 	l    *lazy.Value[*reservation.Service]
 	locs regions.Lister
@@ -229,6 +272,47 @@ func (a reservationAPI) ListCommitments(ctx context.Context, project, location s
 		return nil, err
 	}
 	return out, nil
+}
+
+func (a reservationAPI) GetReservationIAMPolicy(ctx context.Context, project, location, name string) ([]Binding, error) {
+	svc, err := a.l.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resource := locationName(project, location) + "/reservations/" + name
+	pol, err := svc.Projects.Locations.Reservations.GetIamPolicy(resource).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	return fromReservationBindings(pol.Bindings), nil
+}
+
+func (a reservationAPI) GetAssignmentIAMPolicy(ctx context.Context, project, location, res, assignment string) ([]Binding, error) {
+	svc, err := a.l.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resource := locationName(project, location) + "/reservations/" + res + "/assignments/" + assignment
+	pol, err := svc.Projects.Locations.Reservations.Assignments.GetIamPolicy(resource).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	return fromReservationBindings(pol.Bindings), nil
+}
+
+func fromReservationBindings(bindings []*reservation.Binding) []Binding {
+	var out []Binding
+	for _, b := range bindings {
+		cond := ""
+		if b.Condition != nil {
+			cond = b.Condition.Title
+			if cond == "" {
+				cond = b.Condition.Expression
+			}
+		}
+		out = append(out, Binding{Role: b.Role, Members: append([]string(nil), b.Members...), Condition: cond})
+	}
+	return out
 }
 
 type transferAPI struct {
@@ -298,6 +382,31 @@ func (a connectionAPI) ListConnections(ctx context.Context, project, location st
 	})
 	if err != nil {
 		return nil, err
+	}
+	return out, nil
+}
+
+func (a connectionAPI) GetConnectionIAMPolicy(ctx context.Context, project, location, id string) ([]Binding, error) {
+	svc, err := a.l.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resource := locationName(project, location) + "/connections/" + id
+	req := &connection.GetIamPolicyRequest{Options: &connection.GetPolicyOptions{RequestedPolicyVersion: 3}}
+	pol, err := svc.Projects.Locations.Connections.GetIamPolicy(resource, req).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	var out []Binding
+	for _, b := range pol.Bindings {
+		cond := ""
+		if b.Condition != nil {
+			cond = b.Condition.Title
+			if cond == "" {
+				cond = b.Condition.Expression
+			}
+		}
+		out = append(out, Binding{Role: b.Role, Members: append([]string(nil), b.Members...), Condition: cond})
 	}
 	return out, nil
 }

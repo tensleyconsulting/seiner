@@ -101,6 +101,13 @@ type Workstation struct {
 	Labels      map[string]string
 }
 
+// Binding is one IAM role binding on a workstation config or workstation.
+type Binding struct {
+	Role      string
+	Members   []string
+	Condition string // condition title, "" when unconditional
+}
+
 // API is the Workstations ↔ Resource boundary. Tests inject a fake; live
 // wraps the Workstations REST client. The List methods wrap a permission
 // error with ErrDenied.
@@ -113,4 +120,10 @@ type API interface {
 	// ListUsable lists the workstations under cluster and config that the
 	// caller may use. Either may be Any.
 	ListUsable(ctx context.Context, project, location, cluster, config string) ([]Workstation, error)
+	// GetConfigIAMPolicy reads the bindings set directly on a workstation
+	// configuration.
+	GetConfigIAMPolicy(ctx context.Context, project, location, cluster, config string) ([]Binding, error)
+	// GetWorkstationIAMPolicy reads the bindings set directly on a
+	// workstation.
+	GetWorkstationIAMPolicy(ctx context.Context, project, location, cluster, config, workstation string) ([]Binding, error)
 }

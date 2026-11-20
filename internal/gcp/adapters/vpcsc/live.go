@@ -76,6 +76,14 @@ func (a *lazyAPI) ListLevels(ctx context.Context, policy string) ([]Level, error
 	return liveAPI{acm: c}.ListLevels(ctx, policy)
 }
 
+func (a *lazyAPI) GetPolicyIAMPolicy(ctx context.Context, policy string) ([]Binding, error) {
+	c, err := a.acm.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return liveAPI{acm: c}.GetPolicyIAMPolicy(ctx, policy)
+}
+
 func (a *lazyAPI) Project(ctx context.Context, project string) (Project, error) {
 	a.mu.Lock()
 	p, ok := a.projects[project]
@@ -160,6 +168,31 @@ func (a liveAPI) ListLevels(ctx context.Context, policy string) ([]Level, error)
 		return nil, denied(err)
 	}
 	return out, nil
+}
+
+func (a liveAPI) GetPolicyIAMPolicy(ctx context.Context, policy string) ([]Binding, error) {
+	req := &acm.GetIamPolicyRequest{
+		Options: &acm.GetPolicyOptions{RequestedPolicyVersion: 3},
+	}
+	pol, err := a.acm.AccessPolicies.GetIamPolicy("accessPolicies/"+policy, req).Context(ctx).Do()
+	if err != nil {
+		return nil, denied(err)
+	}
+	var out []Binding
+	for _, b := range pol.Bindings {
+		out = append(out, Binding{Role: b.Role, Members: append([]string(nil), b.Members...), Condition: conditionTitle(b.Condition)})
+	}
+	return out, nil
+}
+
+func conditionTitle(e *acm.Expr) string {
+	if e == nil {
+		return ""
+	}
+	if e.Title != "" {
+		return e.Title
+	}
+	return e.Expression
 }
 
 // Project reads the project's number, and its organization from its

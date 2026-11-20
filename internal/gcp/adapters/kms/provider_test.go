@@ -114,6 +114,14 @@ func (f fakeAPI) GetIAMPolicy(_ context.Context, _, _, ring, key string) ([]Bind
 	return f.policies[ring], nil
 }
 
+func (f fakeAPI) GetImportJobIAMPolicy(_ context.Context, _, _, ring, job string) ([]Binding, error) {
+	f.called()
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.policies[ring+"/importJobs/"+job], nil
+}
+
 var created = time.Date(2024, 4, 1, 9, 0, 0, 0, time.UTC)
 
 func sample() fakeAPI {

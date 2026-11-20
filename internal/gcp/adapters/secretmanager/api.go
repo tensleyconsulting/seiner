@@ -36,6 +36,13 @@ type Version struct {
 	KMSKeyVersions []string
 }
 
+// Binding is one IAM role binding on a secret.
+type Binding struct {
+	Role      string
+	Members   []string
+	Condition string // condition title, "" when unconditional
+}
+
 // API is the Secret Manager ↔ Resource boundary. Tests inject a fake; live
 // wraps the Secret Manager REST client.
 type API interface {
@@ -43,4 +50,6 @@ type API interface {
 	// ListVersions stops after limit versions and reports whether more were
 	// left.
 	ListVersions(ctx context.Context, project, secret string, limit int) ([]Version, bool, error)
+	// GetIAMPolicy reads the bindings set directly on a secret.
+	GetIAMPolicy(ctx context.Context, project, secret string) ([]Binding, error)
 }

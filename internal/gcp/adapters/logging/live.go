@@ -68,6 +68,14 @@ func (a lazyAPI) ListLinks(ctx context.Context, project, location, bucket string
 	return liveAPI{svc: svc}.ListLinks(ctx, project, location, bucket)
 }
 
+func (a lazyAPI) GetViewIAMPolicy(ctx context.Context, project, location, bucket, view string) ([]Binding, error) {
+	svc, err := a.l.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return liveAPI{svc: svc}.GetViewIAMPolicy(ctx, project, location, bucket, view)
+}
+
 var (
 	_ API = lazyAPI{}
 	_ API = liveAPI{}
@@ -194,6 +202,32 @@ func (a liveAPI) ListLinks(ctx context.Context, project, location, bucket string
 		return nil, err
 	}
 	return out, nil
+}
+
+func (a liveAPI) GetViewIAMPolicy(ctx context.Context, project, location, bucket, view string) ([]Binding, error) {
+	name := bucketName(project, location, bucket) + "/views/" + view
+	req := &lg.GetIamPolicyRequest{
+		Options: &lg.GetPolicyOptions{RequestedPolicyVersion: 3},
+	}
+	policy, err := a.svc.Projects.Locations.Buckets.Views.GetIamPolicy(name, req).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	var out []Binding
+	for _, b := range policy.Bindings {
+		out = append(out, Binding{Role: b.Role, Members: append([]string(nil), b.Members...), Condition: conditionTitle(b.Condition)})
+	}
+	return out, nil
+}
+
+func conditionTitle(e *lg.Expr) string {
+	if e == nil {
+		return ""
+	}
+	if e.Title != "" {
+		return e.Title
+	}
+	return e.Expression
 }
 
 func fromMetric(m *lg.LogMetric) Metric {

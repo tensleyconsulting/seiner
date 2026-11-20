@@ -42,6 +42,14 @@ func (a lazyAPI) ListVersions(ctx context.Context, project, secret string, limit
 	return liveAPI{svc: svc}.ListVersions(ctx, project, secret, limit)
 }
 
+func (a lazyAPI) GetIAMPolicy(ctx context.Context, project, secret string) ([]Binding, error) {
+	svc, err := a.l.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return liveAPI{svc: svc}.GetIAMPolicy(ctx, project, secret)
+}
+
 var (
 	_ API = lazyAPI{}
 	_ API = liveAPI{}
@@ -85,6 +93,29 @@ func (a liveAPI) ListVersions(ctx context.Context, project, secret string, limit
 		return nil, false, err
 	}
 	return out, truncated, nil
+}
+
+func (a liveAPI) GetIAMPolicy(ctx context.Context, project, secret string) ([]Binding, error) {
+	name := "projects/" + project + "/secrets/" + secret
+	policy, err := a.svc.Projects.Secrets.GetIamPolicy(name).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	var out []Binding
+	for _, b := range policy.Bindings {
+		out = append(out, Binding{Role: b.Role, Members: append([]string(nil), b.Members...), Condition: conditionTitle(b.Condition)})
+	}
+	return out, nil
+}
+
+func conditionTitle(e *sm.Expr) string {
+	if e == nil {
+		return ""
+	}
+	if e.Title != "" {
+		return e.Title
+	}
+	return e.Expression
 }
 
 func fromSecret(s *sm.Secret) Secret {

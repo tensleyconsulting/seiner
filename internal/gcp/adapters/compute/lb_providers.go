@@ -51,6 +51,9 @@ func (p LoadBalancers) List(ctx context.Context, scopeID string) ([]model.Resour
 // health checks. It assembles the load balancers again, from the list calls
 // List just made when the API is a Memo; the catalog caches the result.
 func (p LoadBalancers) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
+	if parent.Service == model.ServiceBackendService && facetID == model.FacetPermissions {
+		return listPermissions(ctx, p.api, parent, "backendServices")
+	}
 	if parent.Service != model.ServiceLoadBalancer {
 		return nil, false, nil
 	}

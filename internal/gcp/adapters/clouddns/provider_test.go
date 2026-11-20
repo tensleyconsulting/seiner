@@ -11,10 +11,11 @@ import (
 )
 
 type fakeAPI struct {
-	zones   []Zone
-	records map[string][]Record // keyed by zone name
-	err     error               // returned from every method when set
-	calls   *int
+	zones    []Zone
+	records  map[string][]Record  // keyed by zone name
+	policies map[string][]Binding // keyed by zone name
+	err      error                // returned from every method when set
+	calls    *int
 }
 
 func (f fakeAPI) called() {
@@ -41,6 +42,14 @@ func (f fakeAPI) ListRecords(_ context.Context, _, zone string, limit int) ([]Re
 		return rs[:limit], true, nil
 	}
 	return rs, false, nil
+}
+
+func (f fakeAPI) GetIAMPolicy(_ context.Context, _, zone string) ([]Binding, error) {
+	f.called()
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.policies[zone], nil
 }
 
 var created = time.Date(2023, 2, 10, 9, 0, 0, 0, time.UTC)
@@ -118,7 +127,7 @@ func TestZoneMapping(t *testing.T) {
 	if want := []string{"dnsName", "visibility", "dnssec", "nameServers", "logging"}; !slices.Equal(keys, want) {
 		t.Fatalf("fields = %v, want %v", keys, want)
 	}
-	if len(r.Facets) != 1 || r.Facets[0].ID != model.FacetRecords || !r.Facets[0].Inline {
+	if len(r.Facets) != 2 || r.Facets[0].ID != model.FacetRecords || r.Facets[1].ID != model.FacetPermissions {
 		t.Fatalf("facets: %+v", r.Facets)
 	}
 

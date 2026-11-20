@@ -73,6 +73,7 @@ func (p Pools) ListRelated(ctx context.Context, parent model.Resource, facetID s
 	case parent.Service == model.ServiceCAPool &&
 		(facetID == model.FacetCertificateAuthorities || facetID == model.FacetCertificates || facetID == model.FacetPermissions):
 	case parent.Service == model.ServiceCertificateAuthority && facetID == model.FacetCRLs:
+	case parent.Service == model.ServiceCertificateRevocationList && facetID == model.FacetPermissions:
 	default:
 		return nil, false, nil
 	}
@@ -85,6 +86,18 @@ func (p Pools) ListRelated(ctx context.Context, parent model.Resource, facetID s
 	}
 	if p.api == nil {
 		return nil, false, errors.New("privateca: no API")
+	}
+
+	if parent.Service == model.ServiceCertificateRevocationList {
+		if len(n.Rest) != 4 || n.Rest[0] != "certificateAuthorities" || n.Rest[1] == "" ||
+			n.Rest[2] != "certificateRevocationLists" || n.Rest[3] == "" {
+			return nil, false, nil
+		}
+		bindings, err := p.api.GetCRLIAMPolicy(ctx, n.Project, n.Location, n.Name, n.Rest[1], n.Rest[3])
+		if err != nil {
+			return nil, false, err
+		}
+		return bindingResources(parent, bindings), false, nil
 	}
 
 	if parent.Service == model.ServiceCertificateAuthority {
@@ -262,7 +275,7 @@ func poolResource(project string, p Pool) model.Resource {
 	if p.Tier == "ENTERPRISE" {
 		facets = append(facets, model.Facet{ID: model.FacetCertificates, Label: "Certificates"})
 	}
-	facets = append(facets, model.Facet{ID: model.FacetPermissions, Label: "Permissions"})
+	facets = append(facets, model.Facet{ID: model.FacetPermissions, Label: "Permissions", Optional: true})
 
 	return model.Resource{
 		ID:       locatedID(project, p.Location, "caPools", p.Name),
@@ -511,6 +524,7 @@ func crlResource(parent model.Resource, location string, crl CRL) model.Resource
 		Fields:   model.FieldsOf(md, crlFields...),
 		Lists:    lists,
 		Badge:    crl.State,
+		Facets:   []model.Facet{{ID: model.FacetPermissions, Label: "Permissions", Optional: true}},
 		ParentID: parent.ID,
 		FacetID:  model.FacetCRLs,
 		Copies:   copies,
@@ -545,7 +559,7 @@ func templateResource(project string, t Template) model.Resource {
 		Labels:      maps.Clone(t.Labels),
 		Metadata:    md,
 		Fields:      model.FieldsOf(md, templateFields...),
-		Facets:      []model.Facet{{ID: model.FacetPermissions, Label: "Permissions"}},
+		Facets:      []model.Facet{{ID: model.FacetPermissions, Label: "Permissions", Optional: true}},
 	}
 }
 

@@ -263,7 +263,7 @@ func TestRepositoryMapping(t *testing.T) {
 			t.Errorf("docker %s = %q, want %q", k, docker.Metadata[k], v)
 		}
 	}
-	wantFacets := []model.Facet{{ID: model.FacetPermissions, Label: "Permissions"}, {ID: model.FacetPackages, Label: "Images"}}
+	wantFacets := []model.Facet{{ID: model.FacetPermissions, Label: "Permissions", Optional: true}, {ID: model.FacetPackages, Label: "Images"}}
 	if !slices.Equal(docker.Facets, wantFacets) {
 		t.Errorf("docker facets = %+v, want %+v", docker.Facets, wantFacets)
 	}

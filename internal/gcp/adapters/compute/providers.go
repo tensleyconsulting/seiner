@@ -3,9 +3,47 @@ package compute
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/tensleyconsulting/seiner/internal/model"
 )
+
+var permissionsFacet = []model.Facet{{ID: model.FacetPermissions, Label: "Permissions", Optional: true}}
+
+func listPermissions(ctx context.Context, api API, parent model.Resource, kind string) ([]model.Resource, bool, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, false, err
+	}
+	project, loc, name, ok := parseID(parent.ID, kind)
+	if !ok {
+		return nil, false, nil
+	}
+	if api == nil {
+		return nil, false, errors.New("compute: no API")
+	}
+	var zone, region string
+	switch {
+	case strings.Contains(parent.ID, "/zones/"):
+		zone = loc
+	case strings.Contains(parent.ID, "/regions/"):
+		region = loc
+	}
+	if kind == "instanceTemplates" && region != "" {
+		return nil, false, nil
+	}
+	bindings, err := api.GetIAMPolicy(ctx, project, kind, zone, region, name)
+	if err != nil {
+		return nil, false, err
+	}
+	out := make([]model.Resource, 0, len(bindings))
+	for _, b := range bindings {
+		r := model.BindingResource(parent.ID, parent.ScopeID, b.Role, b.Members, b.Condition)
+		r.ParentID = parent.ID
+		r.FacetID = model.FacetPermissions
+		out = append(out, r)
+	}
+	return out, false, nil
+}
 
 func projectScope(scopeID string) (string, bool) {
 	return model.ProjectID(scopeID)
@@ -43,6 +81,9 @@ func (p Networks) List(ctx context.Context, scopeID string) ([]model.Resource, e
 }
 
 func (p Networks) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
+	if parent.Service == model.ServiceSubnet && facetID == model.FacetPermissions {
+		return listPermissions(ctx, p.api, parent, "subnetworks")
+	}
 	if parent.Service != model.ServiceVPC {
 		return nil, false, nil
 	}
@@ -127,6 +168,14 @@ func (p Instances) List(ctx context.Context, scopeID string) ([]model.Resource, 
 		out = append(out, instanceResource(project, inst))
 	}
 	return out, nil
+}
+
+// ListRelated lists a VM instance's IAM bindings.
+func (p Instances) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
+	if parent.Service != model.ServiceComputeEngine || facetID != model.FacetPermissions {
+		return nil, false, nil
+	}
+	return listPermissions(ctx, p.api, parent, "instances")
 }
 
 // Addresses lists reserved global and regional IP addresses.
@@ -256,6 +305,14 @@ func (p ServiceAttachments) List(ctx context.Context, scopeID string) ([]model.R
 	return out, nil
 }
 
+// ListRelated lists a service attachment's IAM bindings.
+func (p ServiceAttachments) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
+	if parent.Service != model.ServiceServiceAttachment || facetID != model.FacetPermissions {
+		return nil, false, nil
+	}
+	return listPermissions(ctx, p.api, parent, "serviceAttachments")
+}
+
 // parseID reads a project-scoped compute name such as
 // projects/p/global/networks/n or projects/p/zones/z/instances/n. kind is the
 // collection (networks, subnetworks, instances).
@@ -271,8 +328,10 @@ var (
 	_ model.ResourceProvider = Networks{}
 	_ model.RelatedLister    = Networks{}
 	_ model.ResourceProvider = Instances{}
+	_ model.RelatedLister    = Instances{}
 	_ model.ResourceProvider = Addresses{}
 	_ model.ResourceProvider = ForwardingRules{}
 	_ model.ResourceProvider = PSCEndpoints{}
 	_ model.ResourceProvider = ServiceAttachments{}
+	_ model.RelatedLister    = ServiceAttachments{}
 )

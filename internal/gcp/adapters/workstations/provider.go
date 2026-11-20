@@ -87,19 +87,14 @@ func (p Provider) List(ctx context.Context, scopeID string) ([]model.Resource, e
 	return items, nil
 }
 
-// ListRelated lists a cluster's configurations or a configuration's
-// workstations.
+// ListRelated lists a cluster's configurations, a configuration's
+// workstations or IAM bindings, or a workstation's IAM bindings.
 func (p Provider) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
-	var want model.ServiceType
-	switch facetID {
-	case model.FacetConfigs:
-		want = model.ServiceWorkstationCluster
-	case model.FacetWorkstations:
-		want = model.ServiceWorkstationConfig
+	switch {
+	case parent.Service == model.ServiceWorkstationCluster && facetID == model.FacetConfigs:
+	case parent.Service == model.ServiceWorkstationConfig && (facetID == model.FacetWorkstations || facetID == model.FacetPermissions):
+	case parent.Service == model.ServiceWorkstation && facetID == model.FacetPermissions:
 	default:
-		return nil, false, nil
-	}
-	if parent.Service != want {
 		return nil, false, nil
 	}
 	if err := ctx.Err(); err != nil {
@@ -111,6 +106,34 @@ func (p Provider) ListRelated(ctx context.Context, parent model.Resource, facetI
 	}
 	if p.api == nil {
 		return nil, false, errors.New("workstations: no API")
+	}
+	if facetID == model.FacetPermissions {
+		var (
+			bindings []Binding
+			err      error
+		)
+		if parent.Service == model.ServiceWorkstationConfig {
+			if len(n.Rest) != 2 || n.Rest[0] != "workstationConfigs" || n.Rest[1] == "" {
+				return nil, false, nil
+			}
+			bindings, err = p.api.GetConfigIAMPolicy(ctx, n.Project, n.Location, n.Name, n.Rest[1])
+		} else {
+			if len(n.Rest) != 4 || n.Rest[0] != "workstationConfigs" || n.Rest[1] == "" || n.Rest[2] != "workstations" || n.Rest[3] == "" {
+				return nil, false, nil
+			}
+			bindings, err = p.api.GetWorkstationIAMPolicy(ctx, n.Project, n.Location, n.Name, n.Rest[1], n.Rest[3])
+		}
+		if err != nil {
+			return nil, false, err
+		}
+		out := make([]model.Resource, 0, len(bindings))
+		for _, b := range bindings {
+			r := model.BindingResource(parent.ID, parent.ScopeID, b.Role, b.Members, b.Condition)
+			r.ParentID = parent.ID
+			r.FacetID = model.FacetPermissions
+			out = append(out, r)
+		}
+		return out, false, nil
 	}
 	var out []model.Resource
 	if facetID == model.FacetConfigs {
@@ -164,6 +187,11 @@ func configID(project, location, cluster, config string) string {
 }
 
 var configsFacet = []model.Facet{{ID: model.FacetConfigs, Label: "Configurations", Inline: true}}
+
+var configFacets = []model.Facet{
+	{ID: model.FacetWorkstations, Label: "Workstations"},
+	{ID: model.FacetPermissions, Label: "Permissions", Optional: true},
+}
 
 var workstationsFacet = []model.Facet{{ID: model.FacetWorkstations, Label: "Workstations", Inline: true}}
 
@@ -256,7 +284,7 @@ func configResource(project string, c Config) model.Resource {
 			"serviceAccount", "publicIp", "ssh", "tcpConnections", "allowedPorts", "shieldedVM", "confidentialVM",
 			"nestedVirtualization", "auditAgent", "idleTimeout", "idleAction", "runningTimeout", "persistentDirectories",
 			"replicaZones", "encryption", "maxUsable", "condition", "updated"),
-		Facets: workstationsFacet,
+		Facets: configFacets,
 	}
 	if l, ok := envList(c.Env); ok {
 		r.Lists = []model.List{l}
@@ -293,6 +321,7 @@ func workstationResource(project string, w Workstation) model.Resource {
 		Labels:   maps.Clone(w.Labels),
 		Metadata: md,
 		Fields:   model.FieldsOf(md, "displayName", "host", "vm", "started", "persistentDirectories", "source", "encryption", "updated"),
+		Facets:   []model.Facet{{ID: model.FacetPermissions, Label: "Permissions", Optional: true}},
 	}
 	if l, ok := envList(w.Env); ok {
 		r.Lists = []model.List{l}

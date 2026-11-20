@@ -33,6 +33,19 @@ func (m *Model) syncDetails() {
 		// once its permissions have loaded.
 		cp = model.WithRoleDetails(cp, m.outline.items(facetLoadKey(cp.ID, model.FacetRolePermissions)))
 	}
+	if len(cp.Facets) > 0 {
+		var shown []model.Facet
+		for _, f := range cp.Facets {
+			if f.Optional {
+				key := facetLoadKey(cp.ID, f.ID)
+				if m.outline.complete[key] && len(m.outline.items(key)) == 0 && !m.outline.failed(key) {
+					continue
+				}
+			}
+			shown = append(shown, f)
+		}
+		cp.Facets = shown
+	}
 	m.details.SetResource(&cp)
 	m.details.SetProblems(m.problems(row))
 	m.details.SetDenials(m.denials(row))

@@ -67,9 +67,10 @@ func (p Policies) List(ctx context.Context, scopeID string) ([]model.Resource, e
 	return out, nil
 }
 
-// ListRelated lists a policy's perimeters or access levels.
+// ListRelated lists a policy's perimeters, access levels, or IAM bindings.
 func (p Policies) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
-	if parent.Service != model.ServiceAccessPolicy || (facetID != model.FacetPerimeters && facetID != model.FacetAccessLevels) {
+	if parent.Service != model.ServiceAccessPolicy ||
+		(facetID != model.FacetPerimeters && facetID != model.FacetAccessLevels && facetID != model.FacetPermissions) {
 		return nil, false, nil
 	}
 	if err := ctx.Err(); err != nil {
@@ -81,6 +82,20 @@ func (p Policies) ListRelated(ctx context.Context, parent model.Resource, facetI
 	}
 	if p.api == nil {
 		return nil, false, errors.New("vpcsc: no API")
+	}
+	if facetID == model.FacetPermissions {
+		bindings, err := p.api.GetPolicyIAMPolicy(ctx, id.policy)
+		if err != nil {
+			return nil, false, err
+		}
+		out := make([]model.Resource, 0, len(bindings))
+		for _, b := range bindings {
+			r := model.BindingResource(parent.ID, parent.ScopeID, b.Role, b.Members, b.Condition)
+			r.ParentID = parent.ID
+			r.FacetID = model.FacetPermissions
+			out = append(out, r)
+		}
+		return out, false, nil
 	}
 	var out []model.Resource
 	if facetID == model.FacetPerimeters {
@@ -343,6 +358,7 @@ func policyResource(org string, pol Policy) model.Resource {
 		Facets: []model.Facet{
 			{ID: model.FacetPerimeters, Label: "Perimeters"},
 			{ID: model.FacetAccessLevels, Label: "Access Levels"},
+			{ID: model.FacetPermissions, Label: "Permissions", Optional: true},
 		},
 	}
 	if len(pol.Scopes) > 0 {

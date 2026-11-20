@@ -344,7 +344,7 @@ func repositoryResource(project string, r Repository) model.Resource {
 			"upstreamCredentials", "upstreamValidation", "upstreams", "size", "vulnerabilityScanning", "immutableTags",
 			"versionPolicy", "snapshotOverwrites", "cleanupPolicies", "kmsKey", "updated"),
 		Lists:  lists,
-		Facets: []model.Facet{{ID: model.FacetPermissions, Label: "Permissions"}, pkgs},
+		Facets: []model.Facet{{ID: model.FacetPermissions, Label: "Permissions", Optional: true}, pkgs},
 	}
 }
 

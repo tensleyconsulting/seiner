@@ -70,6 +70,9 @@ type AdminAPI interface {
 	// ListServiceAccountKeys lists an account's keys, user- and
 	// system-managed.
 	ListServiceAccountKeys(ctx context.Context, project, email string) ([]ServiceAccountKey, error)
+	// GetServiceAccountPolicy reads the IAM policy set directly on a service
+	// account.
+	GetServiceAccountPolicy(ctx context.Context, project, email string) (Policy, error)
 	// ListRoles lists the custom roles defined on parent (projects/p or
 	// organizations/1), with their permissions.
 	ListRoles(ctx context.Context, parent string) ([]Role, error)

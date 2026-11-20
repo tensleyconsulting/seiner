@@ -87,6 +87,14 @@ func (a lazyAPI) GetTemplateIAMPolicy(ctx context.Context, project, location, te
 	return liveAPI{svc: svc}.GetTemplateIAMPolicy(ctx, project, location, template)
 }
 
+func (a lazyAPI) GetCRLIAMPolicy(ctx context.Context, project, location, pool, ca, crl string) ([]Binding, error) {
+	svc, err := a.l.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return liveAPI{svc: svc}.GetCRLIAMPolicy(ctx, project, location, pool, ca, crl)
+}
+
 var (
 	_ API = lazyAPI{}
 	_ API = liveAPI{}
@@ -198,6 +206,15 @@ func (a liveAPI) GetPoolIAMPolicy(ctx context.Context, project, location, pool s
 func (a liveAPI) GetTemplateIAMPolicy(ctx context.Context, project, location, template string) ([]Binding, error) {
 	name := "projects/" + project + "/locations/" + location + "/certificateTemplates/" + template
 	policy, err := a.svc.Projects.Locations.CertificateTemplates.GetIamPolicy(name).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	return fromBindings(policy.Bindings), nil
+}
+
+func (a liveAPI) GetCRLIAMPolicy(ctx context.Context, project, location, pool, ca, crl string) ([]Binding, error) {
+	name := poolName(project, location, pool) + "/certificateAuthorities/" + ca + "/certificateRevocationLists/" + crl
+	policy, err := a.svc.Projects.Locations.CaPools.CertificateAuthorities.CertificateRevocationLists.GetIamPolicy(name).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
 	if err != nil {
 		return nil, err
 	}

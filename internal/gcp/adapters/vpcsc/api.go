@@ -113,6 +113,13 @@ type Project struct {
 	Org    string // organizations/N; "" when the project has no organization
 }
 
+// Binding is one IAM role binding on an access policy.
+type Binding struct {
+	Role      string
+	Members   []string
+	Condition string // condition title, "" when unconditional
+}
+
 // API is the Access Context Manager ↔ Resource boundary. Tests inject a
 // fake; live wraps the Access Context Manager and Resource Manager REST
 // clients.
@@ -122,6 +129,8 @@ type API interface {
 	ListPerimeters(ctx context.Context, policy string) ([]Perimeter, error)
 	GetPerimeter(ctx context.Context, policy, name string) (Perimeter, error)
 	ListLevels(ctx context.Context, policy string) ([]Level, error)
+	// GetPolicyIAMPolicy reads the bindings set directly on an access policy.
+	GetPolicyIAMPolicy(ctx context.Context, policy string) ([]Binding, error)
 	// Project resolves a project id to its number and organization.
 	Project(ctx context.Context, project string) (Project, error)
 }

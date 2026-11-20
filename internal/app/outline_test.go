@@ -775,14 +775,16 @@ func TestOptionalFacetsHiddenWhenEmpty(t *testing.T) {
 	}
 
 	m = expandNamed(m, "Digests")
-	m = expandNamed(m, "v1.0.0")
 	m = jumpToID(m, ver.ID)
 	vRow := mustSelected(t, m)
 	if vRow.Expandable || vRow.Expanded {
-		t.Fatalf("version with all empty optional facets should lose triangle: %+v", vRow)
+		t.Fatalf("version with all empty optional facets should have no triangle after parent opens: %+v", vRow)
 	}
 	if kids := rowsUnder(m, vRow.Key()); len(kids) != 0 {
 		t.Fatalf("expected no child rows under empty version, got %+v", kids)
+	}
+	if f, ok := m.details.SelectedFacet(); ok {
+		t.Fatalf("details pane should hide empty optional facets, got %+v", f)
 	}
 }
 

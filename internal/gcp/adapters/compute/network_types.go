@@ -298,5 +298,6 @@ func serviceAttachmentResource(project string, s ServiceAttachment) model.Resour
 		Fields:      model.FieldsOf(md, "targetService", "connectionPreference", "endpoints", "natSubnets", "proxyProtocol", "domainNames"),
 		Lists:       lists,
 		Created:     s.Created,
+		Facets:      permissionsFacet,
 	}
 }

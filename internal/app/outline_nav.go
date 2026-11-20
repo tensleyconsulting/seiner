@@ -72,8 +72,9 @@ func (m Model) toggleOutline() (Model, tea.Cmd) {
 		}
 		if m.outline.loaded(key) {
 			m.outline.showKids[key] = true
+			cmd := m.prefetchOptionalOnly(m.outline.items(key))
 			m.rebuildOutline()
-			return m, nil
+			return m, cmd
 		}
 		m.status.SetFlash("loading " + strings.ToLower(row.Facet.Label) + "…")
 		cmd := m.startRelated(row.Resource, row.Facet, false)
@@ -102,9 +103,14 @@ func (m Model) toggleOutline() (Model, tea.Cmd) {
 			return m, cmd
 		}
 		if r.IsCollection() || r.IsProductGroup() || r.IsPrefix() || r.IsBucket() {
-			m.outline.showKids[key] = !m.outline.showKids[key]
+			opening := !m.outline.showKids[key]
+			m.outline.showKids[key] = opening
+			var cmd tea.Cmd
+			if opening && r.IsCollection() {
+				cmd = m.prefetchOptionalOnly(m.collectionItems(r))
+			}
 			m.rebuildOutline()
-			return m, nil
+			return m, cmd
 		}
 		if r.IsBinding() && row.Via != "" {
 			if !row.Expandable {

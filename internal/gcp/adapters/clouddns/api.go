@@ -31,6 +31,13 @@ type Record struct {
 	Routing string   // "geo", "weighted round robin", "failover"; "" for plain data
 }
 
+// Binding is one IAM role binding on a managed zone.
+type Binding struct {
+	Role      string
+	Members   []string
+	Condition string // condition title, "" when unconditional
+}
+
 // API is the Cloud DNS ↔ Resource boundary. Tests inject a fake; live wraps
 // the Cloud DNS REST client.
 type API interface {
@@ -38,4 +45,6 @@ type API interface {
 	// ListRecords stops after limit record sets and reports whether more
 	// were left.
 	ListRecords(ctx context.Context, project, zone string, limit int) ([]Record, bool, error)
+	// GetIAMPolicy reads the bindings set directly on a managed zone.
+	GetIAMPolicy(ctx context.Context, project, zone string) ([]Binding, error)
 }

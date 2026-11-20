@@ -149,6 +149,14 @@ type Connection struct {
 	Modified     time.Time
 }
 
+// Binding is one IAM role binding on a BigQuery table, routine, reservation,
+// assignment, or connection.
+type Binding struct {
+	Role      string
+	Members   []string
+	Condition string // condition title; "" when unconditional
+}
+
 // DatasetAPI is the BigQuery API ↔ Resource boundary. Tests inject a fake;
 // live wraps the BigQuery REST client.
 type DatasetAPI interface {
@@ -158,6 +166,8 @@ type DatasetAPI interface {
 	ListTables(ctx context.Context, project, dataset string, limit int) ([]Table, bool, error)
 	ListRoutines(ctx context.Context, project, dataset string, limit int) ([]Routine, bool, error)
 	ListModels(ctx context.Context, project, dataset string, limit int) ([]Model, bool, error)
+	GetTableIAMPolicy(ctx context.Context, project, dataset, table string) ([]Binding, error)
+	GetRoutineIAMPolicy(ctx context.Context, project, dataset, routine string) ([]Binding, error)
 }
 
 // ReservationAPI is the BigQuery Reservation API ↔ Resource boundary.
@@ -167,6 +177,8 @@ type ReservationAPI interface {
 	ListReservations(ctx context.Context, project, location string) ([]Reservation, error)
 	ListAssignments(ctx context.Context, project, location, reservation string) ([]Assignment, error)
 	ListCommitments(ctx context.Context, project, location string) ([]Commitment, error)
+	GetReservationIAMPolicy(ctx context.Context, project, location, reservation string) ([]Binding, error)
+	GetAssignmentIAMPolicy(ctx context.Context, project, location, reservation, assignment string) ([]Binding, error)
 }
 
 // TransferAPI is the BigQuery Data Transfer API ↔ Resource boundary.
@@ -180,4 +192,5 @@ type ConnectionAPI interface {
 	// Locations is where to look: the API cannot list its locations.
 	Locations(ctx context.Context, project string) ([]string, error)
 	ListConnections(ctx context.Context, project, location string) ([]Connection, error)
+	GetConnectionIAMPolicy(ctx context.Context, project, location, connection string) ([]Binding, error)
 }

@@ -211,6 +211,7 @@ func diskResource(project string, d Disk) model.Resource {
 			"provisionedIops", "provisionedThroughput", "architecture", "encryption", "lastAttached"),
 		Created: d.Created,
 		Labels:  maps.Clone(d.Labels),
+		Facets:  permissionsFacet,
 	}
 }
 
@@ -244,7 +245,7 @@ func instanceTemplateResource(project string, t InstanceTemplate) model.Resource
 	set(md, "serviceAccount", t.ServiceAccount)
 	set(md, "networkTags", strings.Join(t.Tags, ","))
 	set(md, "provisioning", t.Provisioning)
-	return model.Resource{
+	r := model.Resource{
 		ID:          regionalID(project, t.Region, "instanceTemplates", t.Name),
 		Name:        t.Name,
 		Service:     model.ServiceInstanceTemplate,
@@ -257,6 +258,10 @@ func instanceTemplateResource(project string, t InstanceTemplate) model.Resource
 		Created: t.Created,
 		Labels:  maps.Clone(t.Labels),
 	}
+	if t.Region == "" {
+		r.Facets = permissionsFacet
+	}
+	return r
 }
 
 func sizeGB(n int64) string {

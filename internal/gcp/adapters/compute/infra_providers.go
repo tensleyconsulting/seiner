@@ -45,6 +45,14 @@ func (p Disks) List(ctx context.Context, scopeID string) ([]model.Resource, erro
 	return listProject(ctx, p.api, scopeID, API.ListDisks, diskResource)
 }
 
+// ListRelated lists a persistent disk's IAM bindings.
+func (p Disks) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
+	if parent.Service != model.ServiceDisk || facetID != model.FacetPermissions {
+		return nil, false, nil
+	}
+	return listPermissions(ctx, p.api, parent, "disks")
+}
+
 // InstanceTemplates lists global and regional instance templates.
 type InstanceTemplates struct{ api API }
 
@@ -59,6 +67,14 @@ func (p InstanceTemplates) ListPermissions(scopeID string) []string {
 
 func (p InstanceTemplates) List(ctx context.Context, scopeID string) ([]model.Resource, error) {
 	return listProject(ctx, p.api, scopeID, API.ListInstanceTemplates, instanceTemplateResource)
+}
+
+// ListRelated lists a global instance template's IAM bindings.
+func (p InstanceTemplates) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
+	if parent.Service != model.ServiceInstanceTemplate || facetID != model.FacetPermissions {
+		return nil, false, nil
+	}
+	return listPermissions(ctx, p.api, parent, "instanceTemplates")
 }
 
 // InstanceGroups lists zonal and regional managed instance groups.
@@ -196,7 +212,9 @@ var (
 	_ model.ResourceProvider = ManagedInstances{}
 	_ model.RelatedLister    = ManagedInstances{}
 	_ model.ResourceProvider = Disks{}
+	_ model.RelatedLister    = Disks{}
 	_ model.ResourceProvider = InstanceTemplates{}
+	_ model.RelatedLister    = InstanceTemplates{}
 	_ model.ResourceProvider = InstanceGroups{}
 	_ model.ResourceProvider = Routers{}
 	_ model.RelatedLister    = Routers{}
