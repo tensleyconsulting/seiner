@@ -399,23 +399,26 @@ func (m *Model) applyRelated(msg relatedLoadedMsg) {
 	}
 }
 
-func (m *Model) finishRelated(msg relatedDoneMsg) {
+func (m *Model) finishRelated(msg relatedDoneMsg) tea.Cmd {
 	key := facetLoadKey(msg.parentID, msg.facetID)
 	m.outline.end(key)
 	errs := m.outline.finish(key)
 	req, found := m.outline.related[key]
+	var cmd tea.Cmd
 	if !req.prefetch {
 		m.outline.showKids[key] = true
+		cmd = m.prefetchOptionalOnly(m.outline.items(key))
 	}
 	m.rebuildOutline()
 	if req.prefetch && len(errs) == 0 {
-		return
+		return nil
 	}
 	ok := fmt.Sprintf("loaded %d", len(m.outline.items(key)))
 	if found && len(m.outline.items(key)) == 0 {
 		ok = emptyFlash(req.facet)
 	}
 	m.flashResult(errs, ok)
+	return cmd
 }
 
 // flashResult names the single error, counts several, or shows ok when

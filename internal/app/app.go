@@ -403,8 +403,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !m.outline.current(facetLoadKey(msg.parentID, msg.facetID), msg.gen) {
 			return m, nil
 		}
-		m.finishRelated(msg)
-		return m, nil
+		return m, m.finishRelated(msg)
 	case tea.MouseClickMsg:
 		if !m.intro.Done() {
 			m.intro.Skip()

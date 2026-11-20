@@ -82,6 +82,12 @@ func (roles) ListServiceAccountKeys(ctx context.Context, _, _ string) ([]iam.Ser
 	return nil, ctx.Err()
 }
 
+// GetServiceAccountPolicy is not used: fixture bindings are Static facet
+// children of their accounts.
+func (roles) GetServiceAccountPolicy(ctx context.Context, _, _ string) (iam.Policy, error) {
+	return iam.Policy{}, ctx.Err()
+}
+
 var _ iam.AdminAPI = roles{}
 
 // perms is service.resource.verb for each verb.

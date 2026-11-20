@@ -77,10 +77,12 @@ func scopeParts(scope string) (kind, id string) {
 	return "", ""
 }
 
-// bucketName is the bucket in a bucket, object, or bucket binding id.
+// bucketName is the bucket in a GCS bucket, object, or bucket binding id.
+// Logging buckets carry a location segment (projects/p/locations/l/buckets/b)
+// and are not GCS buckets.
 func bucketName(id string) string {
 	p, ok := ParseName(id)
-	if !ok || p.Kind != "buckets" {
+	if !ok || p.Kind != "buckets" || p.Location != "" {
 		return ""
 	}
 	return p.Name

@@ -82,6 +82,22 @@ func (a lazyAPI) ListUsable(ctx context.Context, project, location, cluster, con
 	return liveAPI{svc: c}.ListUsable(ctx, project, location, cluster, config)
 }
 
+func (a lazyAPI) GetConfigIAMPolicy(ctx context.Context, project, location, cluster, config string) ([]Binding, error) {
+	c, err := a.svc.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return liveAPI{svc: c}.GetConfigIAMPolicy(ctx, project, location, cluster, config)
+}
+
+func (a lazyAPI) GetWorkstationIAMPolicy(ctx context.Context, project, location, cluster, config, workstation string) ([]Binding, error) {
+	c, err := a.svc.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return liveAPI{svc: c}.GetWorkstationIAMPolicy(ctx, project, location, cluster, config, workstation)
+}
+
 var (
 	_ API = lazyAPI{}
 	_ API = liveAPI{}
@@ -167,6 +183,42 @@ func (a liveAPI) ListUsable(ctx context.Context, project, location, cluster, con
 
 func clusterParent(project, location, cluster string) string {
 	return "projects/" + project + "/locations/" + location + "/workstationClusters/" + cluster
+}
+
+func (a liveAPI) GetConfigIAMPolicy(ctx context.Context, project, location, cluster, config string) ([]Binding, error) {
+	name := clusterParent(project, location, cluster) + "/workstationConfigs/" + config
+	policy, err := a.svc.Projects.Locations.WorkstationClusters.WorkstationConfigs.GetIamPolicy(name).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	return fromBindings(policy.Bindings), nil
+}
+
+func (a liveAPI) GetWorkstationIAMPolicy(ctx context.Context, project, location, cluster, config, workstation string) ([]Binding, error) {
+	name := clusterParent(project, location, cluster) + "/workstationConfigs/" + config + "/workstations/" + workstation
+	policy, err := a.svc.Projects.Locations.WorkstationClusters.WorkstationConfigs.Workstations.GetIamPolicy(name).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	return fromBindings(policy.Bindings), nil
+}
+
+func fromBindings(bindings []*ws.Binding) []Binding {
+	var out []Binding
+	for _, b := range bindings {
+		out = append(out, Binding{Role: b.Role, Members: append([]string(nil), b.Members...), Condition: conditionTitle(b.Condition)})
+	}
+	return out
+}
+
+func conditionTitle(e *ws.Expr) string {
+	if e == nil {
+		return ""
+	}
+	if e.Title != "" {
+		return e.Title
+	}
+	return e.Expression
 }
 
 // denied wraps a 403 with ErrDenied, keeping the Google error for Classify.

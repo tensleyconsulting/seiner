@@ -4,6 +4,8 @@ import (
 	"slices"
 	"strings"
 
+	tea "charm.land/bubbletea/v2"
+
 	"github.com/tensleyconsulting/seiner/internal/model"
 	"github.com/tensleyconsulting/seiner/internal/ui/resources"
 )
@@ -307,6 +309,63 @@ func (m *Model) outlineRows(r model.Resource, depth int) []resources.Row {
 	return m.outlineRowsVia(r, "", depth)
 }
 
+// maxOptionalPrefetch caps how many optional-only child resources are
+// prefetched automatically when their parent collection or facet opens.
+// Larger lists fall back to on-demand loading so opening a huge collection
+// does not burst GetIamPolicy calls.
+const maxOptionalPrefetch = 50
+
+// optionalOnly reports whether r has facets and every one of them is Optional.
+func optionalOnly(r model.Resource) bool {
+	if len(r.Facets) == 0 {
+		return false
+	}
+	for _, f := range r.Facets {
+		if !f.Optional {
+			return false
+		}
+	}
+	return true
+}
+
+// prefetchOptionalOnly starts background prefetches for the optional facets
+// of optional-only resources in rs so empty ones never show an expand arrow.
+// Skips prefetching when more than maxOptionalPrefetch resources qualify.
+func (m *Model) prefetchOptionalOnly(rs []model.Resource) tea.Cmd {
+	var targets []model.Resource
+	for _, r := range rs {
+		if optionalOnly(r) {
+			targets = append(targets, r)
+		}
+	}
+	if len(targets) == 0 || len(targets) > maxOptionalPrefetch {
+		return nil
+	}
+	var cmds []tea.Cmd
+	for _, r := range targets {
+		for _, f := range r.Facets {
+			key := facetLoadKey(r.ID, f.ID)
+			if !m.outline.complete[key] && !m.outline.loading(key) {
+				if cmd := m.startRelatedPrefetch(r, f); cmd != nil {
+					cmds = append(cmds, cmd)
+				}
+			}
+		}
+	}
+	return tea.Batch(cmds...)
+}
+
+// collectionItems returns the top-level resources belonging to collection row c.
+func (m *Model) collectionItems(c model.Resource) []model.Resource {
+	var out []model.Resource
+	for _, r := range m.outline.items(scopeKey(c.ScopeID)) {
+		if r.ParentID == "" && r.Service == c.Service {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
 func (m *Model) facetsState(r model.Resource) (visible []model.Facet, expandable, loading bool) {
 	anyPending := false
 	for _, f := range r.Facets {
@@ -326,7 +385,7 @@ func (m *Model) facetsState(r model.Resource) (visible []model.Facet, expandable
 			visible = append(visible, f)
 		}
 	}
-	expandable = len(visible) > 0 || anyPending
+	expandable = len(visible) > 0 || (anyPending && !loading)
 	return visible, expandable, loading
 }
 

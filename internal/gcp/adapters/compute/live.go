@@ -191,6 +191,14 @@ func (a lazyAPI) GetRouter(ctx context.Context, project, region, name string) (R
 	return liveAPI{svc: svc}.GetRouter(ctx, project, region, name)
 }
 
+func (a lazyAPI) GetIAMPolicy(ctx context.Context, project, kind, zone, region, name string) ([]Binding, error) {
+	svc, err := a.l.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return liveAPI{svc: svc}.GetIAMPolicy(ctx, project, kind, zone, region, name)
+}
+
 func (a lazyAPI) ListManagedInstances(ctx context.Context, project, zone, region, group string, limit int) ([]ManagedInstance, bool, error) {
 	svc, err := a.l.Get(ctx)
 	if err != nil {
@@ -1114,6 +1122,52 @@ func (a liveAPI) GetRouter(ctx context.Context, project, region, name string) (R
 		return Router{}, err
 	}
 	return fromRouter(r), nil
+}
+
+func (a liveAPI) GetIAMPolicy(ctx context.Context, project, kind, zone, region, name string) ([]Binding, error) {
+	var (
+		pol *gce.Policy
+		err error
+	)
+	switch kind {
+	case "instances":
+		pol, err = a.svc.Instances.GetIamPolicy(project, zone, name).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
+	case "subnetworks":
+		pol, err = a.svc.Subnetworks.GetIamPolicy(project, region, name).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
+	case "disks":
+		if zone != "" {
+			pol, err = a.svc.Disks.GetIamPolicy(project, zone, name).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
+		} else {
+			pol, err = a.svc.RegionDisks.GetIamPolicy(project, region, name).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
+		}
+	case "instanceTemplates":
+		pol, err = a.svc.InstanceTemplates.GetIamPolicy(project, name).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
+	case "backendServices":
+		if region != "" {
+			pol, err = a.svc.RegionBackendServices.GetIamPolicy(project, region, name).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
+		} else {
+			pol, err = a.svc.BackendServices.GetIamPolicy(project, name).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
+		}
+	case "serviceAttachments":
+		pol, err = a.svc.ServiceAttachments.GetIamPolicy(project, region, name).OptionsRequestedPolicyVersion(3).Context(ctx).Do()
+	default:
+		return nil, fmt.Errorf("compute: unsupported IAM policy kind %q", kind)
+	}
+	if err != nil {
+		return nil, err
+	}
+	var out []Binding
+	for _, b := range pol.Bindings {
+		cond := ""
+		if b.Condition != nil {
+			cond = b.Condition.Title
+			if cond == "" {
+				cond = b.Condition.Expression
+			}
+		}
+		out = append(out, Binding{Role: b.Role, Members: append([]string(nil), b.Members...), Condition: cond})
+	}
+	return out, nil
 }
 
 func fromDisk(d *gce.Disk) Disk {

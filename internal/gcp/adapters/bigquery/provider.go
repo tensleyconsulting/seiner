@@ -112,13 +112,12 @@ func (p Datasets) List(ctx context.Context, scopeID string) ([]model.Resource, e
 }
 
 // ListRelated lists a dataset's tables, routines, models, and access
-// list.
+// list, and a table's or routine's IAM bindings.
 func (p Datasets) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
-	if parent.Service != model.ServiceBigQueryDataset {
-		return nil, false, nil
-	}
-	switch facetID {
-	case model.FacetTables, model.FacetRoutines, model.FacetModels, model.FacetPermissions:
+	switch {
+	case parent.Service == model.ServiceBigQueryDataset &&
+		(facetID == model.FacetTables || facetID == model.FacetRoutines || facetID == model.FacetModels || facetID == model.FacetPermissions):
+	case (parent.Service == model.ServiceBigQueryTable || parent.Service == model.ServiceBigQueryRoutine) && facetID == model.FacetPermissions:
 	default:
 		return nil, false, nil
 	}
@@ -126,11 +125,34 @@ func (p Datasets) ListRelated(ctx context.Context, parent model.Resource, facetI
 		return nil, false, err
 	}
 	n, ok := model.ParseName(parent.ID)
-	if !ok || n.Project == "" || n.Kind != "datasets" || len(n.Rest) != 0 {
+	if !ok || n.Project == "" || n.Kind != "datasets" {
 		return nil, false, nil
 	}
 	if p.api == nil {
 		return nil, false, errors.New("bigquery: no API")
+	}
+	if parent.Service == model.ServiceBigQueryTable {
+		if len(n.Rest) != 2 || n.Rest[0] != "tables" || n.Rest[1] == "" {
+			return nil, false, nil
+		}
+		bindings, err := p.api.GetTableIAMPolicy(ctx, n.Project, n.Name, n.Rest[1])
+		if err != nil {
+			return nil, false, err
+		}
+		return bindingResources(parent, bindings), false, nil
+	}
+	if parent.Service == model.ServiceBigQueryRoutine {
+		if len(n.Rest) != 2 || n.Rest[0] != "routines" || n.Rest[1] == "" {
+			return nil, false, nil
+		}
+		bindings, err := p.api.GetRoutineIAMPolicy(ctx, n.Project, n.Name, n.Rest[1])
+		if err != nil {
+			return nil, false, err
+		}
+		return bindingResources(parent, bindings), false, nil
+	}
+	if len(n.Rest) != 0 {
+		return nil, false, nil
 	}
 	var (
 		out       []model.Resource
@@ -221,7 +243,7 @@ func datasetResource(project string, d Dataset) model.Resource {
 			{ID: model.FacetTables, Label: "Tables"},
 			{ID: model.FacetRoutines, Label: "Routines"},
 			{ID: model.FacetModels, Label: "Models"},
-			{ID: model.FacetPermissions, Label: "Permissions"},
+			{ID: model.FacetPermissions, Label: "Permissions", Optional: true},
 		},
 	}
 	if len(authorized) > 0 {
@@ -270,6 +292,7 @@ func tableResource(parent model.Resource, t Table) model.Resource {
 	r.Labels = maps.Clone(t.Labels)
 	r.Metadata = md
 	r.Fields = model.FieldsOf(md, "type", "friendlyName", "partitioning", "partitionFilter", "clustering", "sql", "expires")
+	r.Facets = []model.Facet{{ID: model.FacetPermissions, Label: "Permissions", Optional: true}}
 	return r
 }
 
@@ -290,6 +313,7 @@ func routineResource(parent model.Resource, rt Routine) model.Resource {
 	r.Created = rt.Created
 	r.Metadata = md
 	r.Fields = model.FieldsOf(md, "type", "language", "modified")
+	r.Facets = []model.Facet{{ID: model.FacetPermissions, Label: "Permissions", Optional: true}}
 	return r
 }
 
@@ -369,20 +393,44 @@ func (p Reservations) List(ctx context.Context, scopeID string) ([]model.Resourc
 	return listRegional(ctx, scopeID, p.api.Locations, p.api.ListReservations, reservationResource)
 }
 
-// ListRelated lists a reservation's assignments.
+// ListRelated lists a reservation's assignments or IAM bindings, and an
+// assignment's IAM bindings.
 func (p Reservations) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
-	if parent.Service != model.ServiceBigQueryReservation || facetID != model.FacetAssignments {
+	switch {
+	case parent.Service == model.ServiceBigQueryReservation && (facetID == model.FacetAssignments || facetID == model.FacetPermissions):
+	case parent.Service == model.ServiceBigQueryAssignment && facetID == model.FacetPermissions:
+	default:
 		return nil, false, nil
 	}
 	if err := ctx.Err(); err != nil {
 		return nil, false, err
 	}
 	n, ok := model.ParseName(parent.ID)
-	if !ok || n.Project == "" || n.Kind != "reservations" || len(n.Rest) != 0 {
+	if !ok || n.Project == "" || n.Location == "" || n.Kind != "reservations" {
 		return nil, false, nil
 	}
 	if p.api == nil {
 		return nil, false, errors.New("bigquery: no Reservation API")
+	}
+	if parent.Service == model.ServiceBigQueryAssignment {
+		if len(n.Rest) != 2 || n.Rest[0] != "assignments" || n.Rest[1] == "" {
+			return nil, false, nil
+		}
+		bindings, err := p.api.GetAssignmentIAMPolicy(ctx, n.Project, n.Location, n.Name, n.Rest[1])
+		if err != nil {
+			return nil, false, err
+		}
+		return bindingResources(parent, bindings), false, nil
+	}
+	if len(n.Rest) != 0 {
+		return nil, false, nil
+	}
+	if facetID == model.FacetPermissions {
+		bindings, err := p.api.GetReservationIAMPolicy(ctx, n.Project, n.Location, n.Name)
+		if err != nil {
+			return nil, false, err
+		}
+		return bindingResources(parent, bindings), false, nil
 	}
 	as, err := p.api.ListAssignments(ctx, n.Project, n.Location, n.Name)
 	if err != nil {
@@ -451,6 +499,39 @@ func (p Connections) List(ctx context.Context, scopeID string) ([]model.Resource
 		return nil, errors.New("bigquery: no Connection API")
 	}
 	return listRegional(ctx, scopeID, p.api.Locations, p.api.ListConnections, connectionResource)
+}
+
+// ListRelated lists a connection's IAM bindings.
+func (p Connections) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
+	if parent.Service != model.ServiceBigQueryConnection || facetID != model.FacetPermissions {
+		return nil, false, nil
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, false, err
+	}
+	n, ok := model.ParseName(parent.ID)
+	if !ok || n.Project == "" || n.Location == "" || n.Kind != "connections" || len(n.Rest) != 0 {
+		return nil, false, nil
+	}
+	if p.api == nil {
+		return nil, false, errors.New("bigquery: no Connection API")
+	}
+	bindings, err := p.api.GetConnectionIAMPolicy(ctx, n.Project, n.Location, n.Name)
+	if err != nil {
+		return nil, false, err
+	}
+	return bindingResources(parent, bindings), false, nil
+}
+
+func bindingResources(parent model.Resource, bindings []Binding) []model.Resource {
+	out := make([]model.Resource, 0, len(bindings))
+	for _, b := range bindings {
+		r := model.BindingResource(parent.ID, parent.ScopeID, b.Role, b.Members, b.Condition)
+		r.ParentID = parent.ID
+		r.FacetID = model.FacetPermissions
+		out = append(out, r)
+	}
+	return out
 }
 
 // listRegional lists one regional resource type in every location of the
@@ -523,7 +604,10 @@ func reservationResource(project string, rv Reservation) model.Resource {
 		Labels:   maps.Clone(rv.Labels),
 		Metadata: md,
 		Fields:   model.FieldsOf(md, "edition", "slots", "autoscale", "idleSlots", "concurrency", "secondaryLocation", "updated"),
-		Facets:   []model.Facet{{ID: model.FacetAssignments, Label: "Assignments", Inline: true}},
+		Facets: []model.Facet{
+			{ID: model.FacetAssignments, Label: "Assignments"},
+			{ID: model.FacetPermissions, Label: "Permissions", Optional: true},
+		},
 	}
 }
 
@@ -544,6 +628,7 @@ func assignmentResource(parent model.Resource, a Assignment) model.Resource {
 		FacetID:  model.FacetAssignments,
 		Metadata: md,
 		Fields:   model.FieldsOf(md, "assignee", "jobType", "assignmentId"),
+		Facets:   []model.Facet{{ID: model.FacetPermissions, Label: "Permissions", Optional: true}},
 	}
 }
 
@@ -624,6 +709,7 @@ func connectionResource(project string, c Connection) model.Resource {
 		Created:     c.Created,
 		Metadata:    md,
 		Fields:      model.FieldsOf(md, "friendlyName", "type", "identity", "target", "kmsKey", "modified"),
+		Facets:      []model.Facet{{ID: model.FacetPermissions, Label: "Permissions", Optional: true}},
 	}
 }
 
@@ -704,5 +790,6 @@ var (
 	_ model.PermissionDeclarer = Commitments{}
 	_ model.PermissionDeclarer = Transfers{}
 	_ model.PermissionDeclarer = Connections{}
+	_ model.RelatedLister      = Connections{}
 	_ regions.Lister           = locations{}
 )

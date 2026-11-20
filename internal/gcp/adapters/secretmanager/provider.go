@@ -54,9 +54,9 @@ func (p Provider) List(ctx context.Context, scopeID string) ([]model.Resource, e
 	return out, nil
 }
 
-// ListRelated lists a secret's versions.
+// ListRelated lists a secret's versions or IAM bindings.
 func (p Provider) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
-	if parent.Service != model.ServiceSecretManager || facetID != model.FacetVersions {
+	if parent.Service != model.ServiceSecretManager || (facetID != model.FacetVersions && facetID != model.FacetPermissions) {
 		return nil, false, nil
 	}
 	if err := ctx.Err(); err != nil {
@@ -68,6 +68,20 @@ func (p Provider) ListRelated(ctx context.Context, parent model.Resource, facetI
 	}
 	if p.api == nil {
 		return nil, false, errors.New("secretmanager: no API")
+	}
+	if facetID == model.FacetPermissions {
+		bindings, err := p.api.GetIAMPolicy(ctx, n.Project, n.Name)
+		if err != nil {
+			return nil, false, err
+		}
+		out := make([]model.Resource, 0, len(bindings))
+		for _, b := range bindings {
+			r := model.BindingResource(parent.ID, parent.ScopeID, b.Role, b.Members, b.Condition)
+			r.ParentID = parent.ID
+			r.FacetID = model.FacetPermissions
+			out = append(out, r)
+		}
+		return out, false, nil
 	}
 	versions, truncated, err := p.api.ListVersions(ctx, n.Project, n.Name, maxVersions)
 	if err != nil {
@@ -110,7 +124,10 @@ func secretResource(project string, s Secret) model.Resource {
 		Labels:   maps.Clone(s.Labels),
 		Metadata: md,
 		Fields:   model.FieldsOf(md, "type", "replication", "kmsKey", "rotation", "nextRotation", "expires", "topics", "destroyDelay", "annotations"),
-		Facets:   []model.Facet{{ID: model.FacetVersions, Label: "Versions", Inline: true}},
+		Facets: []model.Facet{
+			{ID: model.FacetVersions, Label: "Versions"},
+			{ID: model.FacetPermissions, Label: "Permissions", Optional: true},
+		},
 	}
 	if len(s.Aliases) > 0 {
 		items := make([]string, 0, len(s.Aliases))

@@ -136,4 +136,5 @@ type API interface {
 	ListTemplates(ctx context.Context, project string) ([]Template, error)
 	GetPoolIAMPolicy(ctx context.Context, project, location, pool string) ([]Binding, error)
 	GetTemplateIAMPolicy(ctx context.Context, project, location, template string) ([]Binding, error)
+	GetCRLIAMPolicy(ctx context.Context, project, location, pool, ca, crl string) ([]Binding, error)
 }

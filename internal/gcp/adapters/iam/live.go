@@ -165,6 +165,14 @@ func (a lazyAdmin) ListServiceAccountKeys(ctx context.Context, project, email st
 	return liveAdmin{client: c}.ListServiceAccountKeys(ctx, project, email)
 }
 
+func (a lazyAdmin) GetServiceAccountPolicy(ctx context.Context, project, email string) (Policy, error) {
+	c, err := a.l.Get(ctx)
+	if err != nil {
+		return Policy{}, err
+	}
+	return liveAdmin{client: c}.GetServiceAccountPolicy(ctx, project, email)
+}
+
 var _ AdminAPI = lazyAdmin{}
 
 type liveAdmin struct {
@@ -203,6 +211,17 @@ func (a liveAdmin) ListServiceAccountKeys(ctx context.Context, project, email st
 		out = append(out, fromKey(k))
 	}
 	return out, nil
+}
+
+func (a liveAdmin) GetServiceAccountPolicy(ctx context.Context, project, email string) (Policy, error) {
+	pol, err := a.client.GetIamPolicy(ctx, policyRequest("projects/"+project+"/serviceAccounts/"+email))
+	if err != nil {
+		return Policy{}, err
+	}
+	if pol == nil {
+		return Policy{}, nil
+	}
+	return fromPolicy(pol.InternalProto), nil
 }
 
 func fromKey(k *adminpb.ServiceAccountKey) ServiceAccountKey {

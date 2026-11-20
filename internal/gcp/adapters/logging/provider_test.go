@@ -16,6 +16,7 @@ type fakeAPI struct {
 	metrics []Metric
 	views   map[string][]View // keyed by location/bucket
 	links   map[string][]Link
+	viewIAM map[string][]Binding // keyed by location/bucket/view
 	err     error
 	calls   *[]string
 }
@@ -62,6 +63,13 @@ func (f fakeAPI) ListLinks(_ context.Context, _, location, bucket string) ([]Lin
 		return nil, f.err
 	}
 	return f.links[location+"/"+bucket], nil
+}
+
+func (f fakeAPI) GetViewIAMPolicy(_ context.Context, _, location, bucket, view string) ([]Binding, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.viewIAM[location+"/"+bucket+"/"+view], nil
 }
 
 var created = time.Date(2024, 9, 12, 15, 0, 0, 0, time.UTC)

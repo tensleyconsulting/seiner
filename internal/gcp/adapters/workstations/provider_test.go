@@ -21,6 +21,7 @@ type fakeAPI struct {
 	configs   map[string][]Config  // by cluster
 	ws        map[string][]Workstation
 	usable    []Workstation
+	policies  map[string][]Binding // keyed by cluster/config or cluster/config/ws
 	denied    map[string]bool
 	locErr    map[string]error // ListClusters error by location
 	err       error            // returned from every method when set
@@ -65,6 +66,20 @@ func (f fakeAPI) ListWorkstations(_ context.Context, _, _, cluster, config strin
 		return nil, ErrDenied
 	}
 	return f.ws[cluster+"/"+config], nil
+}
+
+func (f fakeAPI) GetConfigIAMPolicy(_ context.Context, _, _, cluster, config string) ([]Binding, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.policies[cluster+"/"+config], nil
+}
+
+func (f fakeAPI) GetWorkstationIAMPolicy(_ context.Context, _, _, cluster, config, ws string) ([]Binding, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.policies[cluster+"/"+config+"/"+ws], nil
 }
 
 func (f fakeAPI) ListUsable(_ context.Context, _, location, cluster, config string) ([]Workstation, error) {

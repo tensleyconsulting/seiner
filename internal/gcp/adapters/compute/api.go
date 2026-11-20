@@ -2,6 +2,13 @@ package compute
 
 import "context"
 
+// Binding is one IAM role binding on a Compute Engine resource.
+type Binding struct {
+	Role      string
+	Members   []string
+	Condition string // condition title; "" when unconditional
+}
+
 // API is the Compute Engine ↔ Resource boundary.
 type API interface {
 	ListNetworks(ctx context.Context, project string) ([]Network, error)
@@ -33,4 +40,8 @@ type API interface {
 	ListRoutes(ctx context.Context, project string) ([]Route, error)
 	ListRouters(ctx context.Context, project string) ([]Router, error)
 	GetRouter(ctx context.Context, project, region, name string) (Router, error)
+	// GetIAMPolicy reads the bindings set directly on a Compute resource.
+	// kind is the Compute collection (instances, subnetworks, disks,
+	// instanceTemplates, backendServices, serviceAttachments).
+	GetIAMPolicy(ctx context.Context, project, kind, zone, region, name string) ([]Binding, error)
 }

@@ -200,6 +200,7 @@ func subnetResource(project string, s Subnet, parentID string) model.Resource {
 		Metadata:    md,
 		Fields:      model.FieldsOf(md, "cidr", "gateway", "network", "secondaryRanges", "purpose", "stackType", "privateGoogleAccess", "flowLogs"),
 		Created:     s.Created,
+		Facets:      permissionsFacet,
 	}
 	if parentID != "" {
 		r.ParentID = parentID
@@ -320,6 +321,7 @@ func instanceResource(project string, inst Instance) model.Resource {
 		Lists:   lists,
 		Created: inst.Created,
 		Labels:  maps.Clone(inst.Labels),
+		Facets:  permissionsFacet,
 	}
 }
 

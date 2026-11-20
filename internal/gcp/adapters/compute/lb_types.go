@@ -419,6 +419,7 @@ func backendServiceResource(project string, b BackendService, parentID string) m
 		Fields: model.FieldsOf(md, "protocol", "scheme", "portName", "backends", "healthChecks", "cloudArmor",
 			"edgeSecurityPolicy", "iap", "cdn", "sessionAffinity", "timeout", "connectionDraining", "logging"),
 		Created:  b.Created,
+		Facets:   permissionsFacet,
 		ParentID: parentID,
 	}
 	if parentID != "" {

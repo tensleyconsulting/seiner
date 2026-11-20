@@ -942,6 +942,11 @@ func TestConsoleURL(t *testing.T) {
 			r:    Resource{ID: "projects/demo-project/locations/us-central1/serviceConnectionPolicies/default-cloud-sql/connections/10000000000000001", Name: "demo-project/sca-auto-fr-0a1b2c3d", Service: ServicePSCConnection, ScopeID: "projects/demo-project", Location: "us-central1", ParentID: "projects/demo-project/locations/us-central1/serviceConnectionPolicies/default-cloud-sql", FacetID: FacetConnections},
 			want: []string{"/net-services/psc/list/policies?", "project=demo-project"},
 		},
+		{
+			name: "logging view binding does not link to storage",
+			r:    Resource{ID: "projects/demo-project/locations/global/buckets/_Default/views/_AllLogs/iam/bindings/roles%2Flogging.viewAccessor", Name: "logging.viewAccessor", Service: ServiceIAMBinding, ScopeID: "projects/demo-project", ParentID: "projects/demo-project/locations/global/buckets/_Default/views/_AllLogs", FacetID: FacetPermissions},
+			want: []string{"/iam-admin/iam?", "project=demo-project"},
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

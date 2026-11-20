@@ -286,7 +286,7 @@ func appResource(project string, b Backend, s *Settings) model.Resource {
 		Fields: model.FieldsOf(md, "loadBalancingScheme", "protocol", "oauthClient", "reauth", "allowedDomains",
 			"corsPreflight", "identitySources", "identityPlatformTenants", "loginHint", "cookieDomain", "accessDeniedPage"),
 		Lists:  lists,
-		Facets: []model.Facet{{ID: model.FacetPermissions, Label: "Access"}},
+		Facets: []model.Facet{{ID: model.FacetPermissions, Label: "Access", Optional: true}},
 	}
 }
 

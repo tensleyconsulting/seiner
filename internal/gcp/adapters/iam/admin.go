@@ -145,14 +145,17 @@ func accountResource(project string, a ServiceAccount) model.Resource {
 		Description: a.Description,
 		Metadata:    md,
 		Fields:      model.FieldsOf(md, model.MetaEmail, "displayName", model.MetaUniqueID, "oauth2ClientId"),
-		Facets:      []model.Facet{{ID: model.FacetKeys, Label: "Keys", Inline: true}},
+		Facets: []model.Facet{
+			{ID: model.FacetKeys, Label: "Keys"},
+			{ID: model.FacetPermissions, Label: "Permissions", Optional: true},
+		},
 	}
 }
 
-// ListRelated lists a listed account's keys. Service agents carry no
-// facet: their keys are Google's and live in Google's projects.
+// ListRelated lists a listed account's keys or IAM bindings. Service agents
+// carry no facet: their keys and policies live in Google's projects.
 func (p ServiceAccounts) ListRelated(ctx context.Context, parent model.Resource, facetID string) ([]model.Resource, bool, error) {
-	if parent.Service != model.ServiceServiceAccount || facetID != model.FacetKeys {
+	if parent.Service != model.ServiceServiceAccount || (facetID != model.FacetKeys && facetID != model.FacetPermissions) {
 		return nil, false, nil
 	}
 	if err := ctx.Err(); err != nil {
@@ -164,6 +167,20 @@ func (p ServiceAccounts) ListRelated(ctx context.Context, parent model.Resource,
 	}
 	if p.api == nil {
 		return nil, false, errors.New("iam: no admin API")
+	}
+	if facetID == model.FacetPermissions {
+		pol, err := p.api.GetServiceAccountPolicy(ctx, n.Project, n.Name)
+		if err != nil {
+			return nil, false, err
+		}
+		out := make([]model.Resource, 0, len(pol.Bindings))
+		for _, b := range pol.Bindings {
+			r := model.BindingResource(parent.ID, parent.ScopeID, b.Role, b.Members, b.Condition)
+			r.ParentID = parent.ID
+			r.FacetID = model.FacetPermissions
+			out = append(out, r)
+		}
+		return out, false, nil
 	}
 	keys, err := p.api.ListServiceAccountKeys(ctx, n.Project, n.Name)
 	if err != nil {

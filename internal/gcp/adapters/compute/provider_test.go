@@ -29,9 +29,10 @@ type fakeAPI struct {
 	managed   map[string][]ManagedInstance // by project/location/group
 	routes    []Route
 	routers   []Router
-	err       error // returned by every method added after instances
-	backErr   error // returned by ListBackendServices alone
-	proxyErr  error // returned by ListTargetProxies alone
+	iam       map[string][]Binding // keyed by kind/loc/name (loc="" for global)
+	err       error                // returned by every method added after instances
+	backErr   error                // returned by ListBackendServices alone
+	proxyErr  error                // returned by ListTargetProxies alone
 }
 
 func (f fakeAPI) ListNetworks(context.Context, string) ([]Network, error) {
@@ -45,6 +46,12 @@ func (f fakeAPI) ListFirewalls(context.Context, string) ([]Firewall, error) {
 }
 func (f fakeAPI) ListInstances(context.Context, string) ([]Instance, error) {
 	return f.instances, nil
+}
+func (f fakeAPI) GetIAMPolicy(_ context.Context, _, kind, zone, region, name string) ([]Binding, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.iam[kind+"/"+zone+region+"/"+name], nil
 }
 func sample() fakeAPI {
 	return fakeAPI{

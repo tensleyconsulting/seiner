@@ -105,6 +105,7 @@ func (p Provider) ListRelated(ctx context.Context, parent model.Resource, facetI
 	case parent.Service == model.ServiceKMS && (facetID == model.FacetKeys || facetID == model.FacetImportJobs || facetID == model.FacetPermissions):
 		ring = true
 	case parent.Service == model.ServiceKMSKey && (facetID == model.FacetVersions || facetID == model.FacetPermissions):
+	case parent.Service == model.ServiceKMSImportJob && facetID == model.FacetPermissions:
 	default:
 		return nil, false, nil
 	}
@@ -115,11 +116,13 @@ func (p Provider) ListRelated(ctx context.Context, parent model.Resource, facetI
 	if !ok || n.Project == "" || n.Location == "" || n.Kind != "keyRings" {
 		return nil, false, nil
 	}
-	var key string
+	var key, job string
 	switch {
 	case ring && len(n.Rest) == 0:
-	case !ring && len(n.Rest) == 2 && n.Rest[0] == "cryptoKeys":
+	case parent.Service == model.ServiceKMSKey && len(n.Rest) == 2 && n.Rest[0] == "cryptoKeys":
 		key = n.Rest[1]
+	case parent.Service == model.ServiceKMSImportJob && len(n.Rest) == 2 && n.Rest[0] == "importJobs":
+		job = n.Rest[1]
 	default:
 		return nil, false, nil
 	}
@@ -156,7 +159,15 @@ func (p Provider) ListRelated(ctx context.Context, parent model.Resource, facetI
 		}
 		return out, truncated, nil
 	default: // model.FacetPermissions
-		bindings, err := p.api.GetIAMPolicy(ctx, n.Project, n.Location, n.Name, key)
+		var (
+			bindings []Binding
+			err      error
+		)
+		if job != "" {
+			bindings, err = p.api.GetImportJobIAMPolicy(ctx, n.Project, n.Location, n.Name, job)
+		} else {
+			bindings, err = p.api.GetIAMPolicy(ctx, n.Project, n.Location, n.Name, key)
+		}
 		if err != nil {
 			return nil, false, err
 		}
@@ -409,7 +420,7 @@ func ringResource(project string, r KeyRing) model.Resource {
 		Facets: []model.Facet{
 			{ID: model.FacetKeys, Label: "Keys"},
 			{ID: model.FacetImportJobs, Label: "Import Jobs"},
-			{ID: model.FacetPermissions, Label: "Permissions"},
+			{ID: model.FacetPermissions, Label: "Permissions", Optional: true},
 		},
 	}
 }
@@ -456,7 +467,7 @@ func keyResource(location, parentID string, k Key) model.Resource {
 		FacetID:  model.FacetKeys,
 		Facets: []model.Facet{
 			{ID: model.FacetVersions, Label: "Versions"},
-			{ID: model.FacetPermissions, Label: "Permissions"},
+			{ID: model.FacetPermissions, Label: "Permissions", Optional: true},
 		},
 	}
 }
@@ -624,6 +635,7 @@ func importJobResource(location, ringID string, j ImportJob) model.Resource {
 		Metadata: md,
 		Fields:   model.FieldsOf(md, "method", "protectionLevel", "backend", "generated", "expires", "expired"),
 		Badge:    j.State,
+		Facets:   []model.Facet{{ID: model.FacetPermissions, Label: "Permissions", Optional: true}},
 		ParentID: ringID,
 		FacetID:  model.FacetImportJobs,
 	}

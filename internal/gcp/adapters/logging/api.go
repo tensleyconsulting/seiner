@@ -79,6 +79,13 @@ type Link struct {
 	Created     time.Time
 }
 
+// Binding is one IAM role binding on a log view.
+type Binding struct {
+	Role      string
+	Members   []string
+	Condition string // condition title, "" when unconditional
+}
+
 // API is the Cloud Logging ↔ Resource boundary. Tests inject a fake; live
 // wraps the Logging REST client. One API serves both Sinks and Buckets.
 type API interface {
@@ -92,4 +99,6 @@ type API interface {
 	// datasets.
 	ListViews(ctx context.Context, project, location, bucket string) ([]View, error)
 	ListLinks(ctx context.Context, project, location, bucket string) ([]Link, error)
+	// GetViewIAMPolicy reads the bindings set directly on a log view.
+	GetViewIAMPolicy(ctx context.Context, project, location, bucket, view string) ([]Binding, error)
 }

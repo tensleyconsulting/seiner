@@ -20,7 +20,9 @@ type fakeDatasets struct {
 	tables   []Table
 	routines []Routine
 	models   []Model
-	err      error // returned from every method when set
+	tableIAM map[string][]Binding // keyed by dataset/table
+	routIAM  map[string][]Binding // keyed by dataset/routine
+	err      error                // returned from every method when set
 	calls    *atomic.Int32
 }
 
@@ -79,6 +81,20 @@ func (f fakeDatasets) ListModels(_ context.Context, _, _ string, limit int) ([]M
 	return out, more, nil
 }
 
+func (f fakeDatasets) GetTableIAMPolicy(_ context.Context, _, dataset, table string) ([]Binding, error) {
+	if err := f.call(); err != nil {
+		return nil, err
+	}
+	return f.tableIAM[dataset+"/"+table], nil
+}
+
+func (f fakeDatasets) GetRoutineIAMPolicy(_ context.Context, _, dataset, routine string) ([]Binding, error) {
+	if err := f.call(); err != nil {
+		return nil, err
+	}
+	return f.routIAM[dataset+"/"+routine], nil
+}
+
 type fakeRegional struct {
 	locations    []string
 	reservations map[string][]Reservation // keyed by location
@@ -86,8 +102,11 @@ type fakeRegional struct {
 	commitments  map[string][]Commitment
 	transfers    map[string][]Transfer
 	connections  map[string][]Connection
-	failLocs     map[string]error // per-location list error
-	err          error            // returned from every method when set
+	resIAM       map[string][]Binding // keyed by location/reservation
+	assignIAM    map[string][]Binding // keyed by location/reservation/assignment
+	connIAM      map[string][]Binding // keyed by location/connection
+	failLocs     map[string]error     // per-location list error
+	err          error                // returned from every method when set
 	calls        *atomic.Int32
 }
 
@@ -120,6 +139,27 @@ func (f fakeRegional) ListAssignments(_ context.Context, _, _, name string) ([]A
 		return nil, err
 	}
 	return f.assignments[name], nil
+}
+
+func (f fakeRegional) GetReservationIAMPolicy(_ context.Context, _, loc, name string) ([]Binding, error) {
+	if err := f.call(loc); err != nil {
+		return nil, err
+	}
+	return f.resIAM[loc+"/"+name], nil
+}
+
+func (f fakeRegional) GetAssignmentIAMPolicy(_ context.Context, _, loc, res, assignment string) ([]Binding, error) {
+	if err := f.call(loc); err != nil {
+		return nil, err
+	}
+	return f.assignIAM[loc+"/"+res+"/"+assignment], nil
+}
+
+func (f fakeRegional) GetConnectionIAMPolicy(_ context.Context, _, loc, id string) ([]Binding, error) {
+	if err := f.call(loc); err != nil {
+		return nil, err
+	}
+	return f.connIAM[loc+"/"+id], nil
 }
 
 func (f fakeRegional) ListCommitments(_ context.Context, _, loc string) ([]Commitment, error) {
@@ -428,7 +468,7 @@ func TestReservations(t *testing.T) {
 	if etl.Metadata["slots"] != "500" || etl.Metadata["autoscale"] != "up to 500 more (100 in use)" || etl.Metadata["idleSlots"] != "used" {
 		t.Errorf("etl metadata %v", etl.Metadata)
 	}
-	if len(etl.Facets) != 1 || etl.Facets[0].ID != model.FacetAssignments || !etl.Facets[0].Inline {
+	if len(etl.Facets) != 2 || etl.Facets[0].ID != model.FacetAssignments || etl.Facets[1].ID != model.FacetPermissions {
 		t.Errorf("etl facets %+v", etl.Facets)
 	}
 	if got[1].Metadata["idleSlots"] != "not used" || got[1].Metadata["concurrency"] != "10" {

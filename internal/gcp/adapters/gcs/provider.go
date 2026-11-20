@@ -165,7 +165,7 @@ func ResourceFrom(project string, b Bucket) model.Resource {
 	if !b.Updated.IsZero() {
 		md["updated"] = b.Updated.UTC().Format("2006-01-02 15:04 UTC")
 	}
-	facets := []model.Facet{{ID: model.FacetPermissions, Label: "Permissions"}}
+	facets := []model.Facet{{ID: model.FacetPermissions, Label: "Permissions", Optional: true}}
 	if !b.RequesterPays {
 		facets = append(facets, model.Facet{ID: model.FacetObjects, Label: "Objects", Nested: true})
 	}
